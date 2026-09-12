@@ -80,7 +80,7 @@ mimo/assets/themes/sakura-coast.json
 mimo/assets/sakura-coast.webp
 mimo/assets/side-avatar.webp
 mimo/selectors.json                 # 选择器契约
-logo/                               # 快捷方式图标
+logo/mimo.ico                        # 快捷方式兜底图标（优先用已安装的 MiMo 应用图标）
 ```
 
 ## 安全

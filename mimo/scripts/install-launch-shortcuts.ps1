@@ -11,10 +11,32 @@ if (-not (Test-Path -LiteralPath $launcher -PathType Leaf)) {
 $powerShell = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
 $desktop = [Environment]::GetFolderPath('Desktop')
 $startMenu = Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs'
-$logoIcon = Join-Path $projectRoot 'logo\chatgpt_white_transparent_windows.ico'
+
+# Prefer the installed Xiaomi MiMo app icon; fall back to logo/mimo.ico.
 $iconLocation = "$powerShell,0"
-if (Test-Path -LiteralPath $logoIcon -PathType Leaf) {
-  $iconLocation = "$logoIcon,0"
+$mimoExe = $null
+$hives = @(
+  'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall',
+  'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall',
+  'HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall'
+)
+foreach ($hive in $hives) {
+  Get-ChildItem $hive -ErrorAction SilentlyContinue | ForEach-Object {
+    $props = Get-ItemProperty -Path $_.PSPath -ErrorAction SilentlyContinue
+    if ($props.DisplayName -like 'Xiaomi MiMo*' -and $props.DisplayIcon) {
+      $exe = ("$($props.DisplayIcon)" -split ',\d+$')[0].Trim().Trim('"')
+      if (Test-Path -LiteralPath $exe) { $mimoExe = $exe }
+    }
+  }
+  if ($mimoExe) { break }
+}
+if ($mimoExe) {
+  $iconLocation = "$mimoExe,0"
+} else {
+  $logoIcon = Join-Path $projectRoot 'logo\mimo.ico'
+  if (Test-Path -LiteralPath $logoIcon -PathType Leaf) {
+    $iconLocation = "$logoIcon,0"
+  }
 }
 
 $shell = New-Object -ComObject WScript.Shell
@@ -32,7 +54,7 @@ foreach ($link in $links) {
   $shortcut.Save()
 }
 
-# Clean legacy shortcut names
+# Clean legacy shortcut names (do not remove the one we just created)
 $legacy = @(
   'MiMo 皮肤启动器.lnk',
   'Xiaomi MiMo (Dream Skin).lnk',
