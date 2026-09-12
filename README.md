@@ -1,5 +1,7 @@
 # MiMo Desktop Skin
 
+[English](./README.en.md) | 简体中文
+
 给 **Xiaomi MiMo 桌面版**换肤。通过本机回环 CDP 注入主题 CSS，**不修改**安装目录、`app.asar` 或官方签名。
 
 克隆即可用：无 npm 依赖、无 `node_modules`、不读取本机凭据、不含 Codex 相关代码。
