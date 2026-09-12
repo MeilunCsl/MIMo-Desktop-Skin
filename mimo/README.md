@@ -1,6 +1,6 @@
 # MiMo Dream Skin
 
-把「樱花海岸」主题应用到 Xiaomi MiMo 桌面版。细节见仓库根 [README.md](../README.md)。
+把「樱花海岸」主题应用到 Xiaomi MiMo 桌面版。细节见仓库根 [README.md](../README.md)（English）/ [README.zh-CN.md](../README.zh-CN.md)（中文）。
 
 ## 命令
 

@@ -1,34 +1,34 @@
 # MiMo Desktop Skin
 
-[English](./README.en.md) | 简体中文
+English | [简体中文](./README.zh-CN.md)
 
-给 **Xiaomi MiMo 桌面版**换肤。通过本机回环 CDP 注入主题 CSS，**不修改**安装目录、`app.asar` 或官方签名。
+Theme skin for **Xiaomi MiMo Desktop**. Injects CSS over local loopback CDP — does **not** modify the install directory, `app.asar`, or the official signature.
 
-克隆即可用：无 npm 依赖、无 `node_modules`、不读取本机凭据、不含 Codex 相关代码。
+Clone and run: no npm dependencies, no `node_modules`, no local credentials, no Codex-related code.
 
-> 非官方第三方工具。请自行确认客户端版本、素材版权与使用边界。
+> Unofficial third-party tool. Confirm client version, asset licenses, and usage boundaries yourself.
 
-## 环境
+## Requirements
 
 - Windows 10+
-- 已安装 Xiaomi MiMo 桌面版
-- Node.js 22+（在 `PATH` 中）
+- Xiaomi MiMo Desktop installed
+- Node.js 22+ on `PATH`
 
-## 快速开始
+## Quick start
 
 ```powershell
 git clone https://github.com/MeilunCsl/MIMo-Desktop-Skin.git
 cd MIMo-Desktop-Skin
 
-# 安装桌面/开始菜单快捷方式（一次）
+# Install desktop / Start Menu shortcuts (once)
 powershell -NoProfile -ExecutionPolicy Bypass -File .\mimo\scripts\install-launch-shortcuts.ps1
 
-# 双击桌面「MiMo 皮肤」
-# 或命令行直接启动（会确保快捷方式存在，并提示用快捷方式拉起 MiMo）
+# Double-click the desktop shortcut "MiMo 皮肤"
+# Or from the command line (ensures the shortcut exists, then prompts you to launch MiMo from it)
 powershell -NoProfile -ExecutionPolicy RemoteSigned -File .\Start-MiMo.ps1
 ```
 
-常用命令：
+Common commands:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy RemoteSigned -File .\Start-MiMo.ps1 -List
@@ -36,67 +36,67 @@ powershell -NoProfile -ExecutionPolicy RemoteSigned -File .\Start-MiMo.ps1 -Diag
 powershell -NoProfile -ExecutionPolicy RemoteSigned -File .\Start-MiMo.ps1 -Revert
 powershell -NoProfile -ExecutionPolicy RemoteSigned -File .\Start-MiMo.ps1 -Verify
 
-# 注入器（MiMo 已带调试端口时）
+# Injector (MiMo must already run with the debug port)
 node .\mimo\scripts\inject-skin.mjs --list
 node .\mimo\scripts\inject-skin.mjs --theme sakura-coast
 node .\mimo\scripts\inject-skin.mjs --revert
 ```
 
-## 皮肤
+## Skin
 
-当前内置**一套**主题：
+One built-in theme:
 
-| id | 名称 |
+| id | Name |
 |---|---|
-| `sakura-coast` | 樱花海岸 |
+| `sakura-coast` | Sakura Coast |
 
-要换插画：替换 `mimo/assets/sakura-coast.webp`，或改 `mimo/assets/themes/sakura-coast.json` 里的 `image` / `colors` / `glass`。
+To change artwork: replace `mimo/assets/sakura-coast.webp`, or edit `image` / `colors` / `glass` in `mimo/assets/themes/sakura-coast.json`.
 
-## 为什么必须用快捷方式启动
+## Why launch from the shortcut
 
-MiMo 是单实例 Electron。由终端启动时，关掉控制台可能带走子进程。  
-快捷方式由资源管理器启动，父进程是 `explorer.exe`，与终端无关。
+MiMo is a single-instance Electron app. If started from a terminal, closing that console can take the child process down.  
+The shortcut is started by Explorer, so its parent is `explorer.exe` and is unrelated to any terminal.
 
-MiMo 已在运行时再双击会命中单实例锁并闪退——先从托盘完全退出，再启动。
+If MiMo is already running (including tray), double-clicking again hits the single-instance lock and the window flashes and exits — fully quit MiMo from the tray first.
 
-## 「重置信号」是什么
+## What the “reset signal” is
 
-顶栏/输入区旁的信号**只读取 X（Twitter）公开时间线**（`https://x.com/thsottiaux`）上与额度重置相关的公开动态，本地分类后展示。
+The signal next to the header / composer **only reads the public X (Twitter) timeline** (`https://x.com/thsottiaux`) for posts about quota resets, then classifies them locally.
 
-- 不是官方通知
-- 不读取 Cookie / Token / 账户凭据
-- 网络失败时显示为空，不影响换肤
+- Not an official notification
+- Does not read cookies / tokens / account credentials
+- On network failure it stays empty; theming still works
 
-实现见 `mimo/scripts/tibo-radar.mjs`。
+See `mimo/scripts/tibo-radar.mjs`.
 
-## 结构
+## Layout
 
 ```text
-Start-MiMo.ps1                      # 根入口
-mimo/Start-MiMo-Skin.ps1            # 定位 exe、快捷方式、CDP、调注入器
-mimo/scripts/inject-skin.mjs        # CDP 注入 + 运行时
-mimo/scripts/theme-css.mjs          # 语义色 → MiMo token
-mimo/scripts/tibo-radar.mjs         # X 公开动态（可选信号）
+Start-MiMo.ps1                      # root entry
+mimo/Start-MiMo-Skin.ps1            # locate exe, shortcuts, CDP, call injector
+mimo/scripts/inject-skin.mjs        # CDP inject + runtime
+mimo/scripts/theme-css.mjs          # semantic colors → MiMo tokens
+mimo/scripts/tibo-radar.mjs         # public X feed (optional signal)
 mimo/scripts/install-launch-shortcuts.ps1
 mimo/assets/themes/sakura-coast.json
 mimo/assets/sakura-coast.webp
 mimo/assets/side-avatar.webp
-mimo/selectors.json                 # 选择器契约
-logo/mimo.ico                        # 快捷方式兜底图标（优先用已安装的 MiMo 应用图标）
+mimo/selectors.json                 # selector contract
+logo/mimo.ico                       # fallback shortcut icon (prefers installed MiMo app icon)
 ```
 
-## 安全
+## Security
 
-- 仓库不含 API key、Cookie、访问令牌、个人配置或本机绝对路径
-- 运行态只写 `%LOCALAPPDATA%\MiMoDreamSkin`
-- CDP 只绑定 `127.0.0.1`
-- 不读取应用 userData 中的本地 API 凭据文件
-- 不上传聊天内容，不修改安装文件
+- No API keys, cookies, tokens, personal config, or machine-specific absolute paths in the repo
+- Runtime state only under `%LOCALAPPDATA%\MiMoDreamSkin`
+- CDP binds to `127.0.0.1` only
+- Does not read local API credential files in the app userData
+- Does not upload chat content or modify install files
 
-## 克隆后自检
+## Clone self-check
 
 ```powershell
 node .\mimo\scripts\inject-skin.mjs --list
 ```
 
-应输出 `sakura-coast`。
+Should print `sakura-coast`.
