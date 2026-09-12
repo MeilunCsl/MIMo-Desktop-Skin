@@ -8,6 +8,20 @@
 
 > 非官方第三方工具。请自行确认客户端版本、素材版权与使用边界。
 
+## 效果预览
+
+樱花海岸皮肤 · **新建任务** 视图（项目已收起）：
+
+![MiMo 主页 — 新建任务](./docs/images/mimo-home.png)
+
+输入区进度条（剩余额度环 · 今日累计 · X 公开重置信号）：
+
+![进度条](./docs/images/mimo-progress-bar.png)
+
+顶栏额度胶囊：
+
+![额度胶囊](./docs/images/mimo-quota-pill.png)
+
 ## 环境
 
 - Windows 10+

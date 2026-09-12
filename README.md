@@ -8,6 +8,20 @@ Clone and run: no npm dependencies, no `node_modules`, no local credentials, no 
 
 > Unofficial third-party tool. Confirm client version, asset licenses, and usage boundaries yourself.
 
+## Preview
+
+Sakura Coast skin on a clean **New Task** view (projects collapsed):
+
+![MiMo home — new task](./docs/images/mimo-home.png)
+
+Composer progress bar (remaining quota ring · today amount · public X reset signal):
+
+![Progress bar](./docs/images/mimo-progress-bar.png)
+
+Header quota pill:
+
+![Quota pill](./docs/images/mimo-quota-pill.png)
+
 ## Requirements
 
 - Windows 10+
