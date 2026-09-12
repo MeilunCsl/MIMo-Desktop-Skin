@@ -1,36 +1,48 @@
-﻿#!/usr/bin/env node
+#!/usr/bin/env node
 /**
  * MiMo Dream Skin injector
  * ---------------------------------------------------------------------------
- * 閫氳繃鏈満鍥炵幆 CDP 鎶?Dream Skin 涓婚娉ㄥ叆宸插甫 --remote-debugging-port 鍚姩鐨? * Xiaomi MiMo Desktop銆備笉淇敼 app.asar銆佷笉鍐欏叆瀹夎鐩綍銆? *
- * 鐢ㄦ硶
- *   node inject-skin.mjs --list                  # 鍒楀嚭鍙敤涓婚
- *   node inject-skin.mjs --theme sakura-coast    # 搴旂敤涓婚锛堝惈鑳屾櫙鎻掔敾锛? *   node inject-skin.mjs --theme doraemon
- *   node inject-skin.mjs --verify                # 鍙妫€鏌? *   node inject-skin.mjs --revert                # 杩樺師瀹樻柟澶栬
+ * Inject Dream Skin theme CSS into Xiaomi MiMo Desktop via loopback CDP.
+ * Does not modify app.asar or the install directory.
+ *
+ * Usage
+ *   node inject-skin.mjs --list
+ *   node inject-skin.mjs --theme sakura-coast
  *   node inject-skin.mjs --theme garden --accent '#2f6b53'
- *   node inject-skin.mjs --theme sakura-coast --no-bg     # 鍙閰嶈壊锛屼笉瑕佹彃鐢? *   node inject-skin.mjs --css ./my.css --bg ./art.webp   # 瀹屽叏鑷畾涔? *
- * 閫€鍑虹爜锛? 鎴愬姛锛? 鍙傛暟閿欒锛? 杩炰笉涓?CDP锛? 鎵句笉鍒版覆鏌撳眰锛? 娉ㄥ叆鍚庢牎楠屼笉閫氳繃
+ *   node inject-skin.mjs --theme sakura-coast --no-bg
+ *   node inject-skin.mjs --css ./my.css --bg ./art.webp
+ *   node inject-skin.mjs --verify
+ *   node inject-skin.mjs --revert
+ *
+ * Exit codes: 0 ok, 1 bad args, 2 CDP unreachable, 3 no renderer, 4 verify failed
  */
 
 import { readFile, readdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { composeThemeCss } from './theme-css.mjs';
-import { refreshTiboRadar, compactSignalText, summarizeTiboPostZh } from './tibo-radar.mjs';
+import { refreshTiboRadar, compactSignalText } from './tibo-radar.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const ROOT = path.resolve(HERE, '..');                 // mimo/
-const REPO = path.resolve(ROOT, '..');                 // 浠撳簱鏍?const THEMES_DIR = path.join(ROOT, 'assets', 'themes');
+const ROOT = path.resolve(HERE, '..'); // mimo/
+const REPO = path.resolve(ROOT, '..');
+const THEMES_DIR = path.join(ROOT, 'assets', 'themes');
 const STYLE_ID = 'mimo-dream-skin-style';
 const VERSION = '2.2.0';
 const DEFAULT_THEME = 'sakura-coast';
 
 const HELP = `MiMo Dream Skin injector
-  --list                鍒楀嚭鍙敤涓婚
-  --theme <id>          搴旂敤涓婚锛堥粯璁?${DEFAULT_THEME}锛?  --accent <hex>        瑕嗙洊涓婚鐨勪富寮鸿皟鑹?  --no-bg               涓嶉摵鑳屾櫙鎻掔敾锛屽彧搴旂敤閰嶈壊
-  --bg <file|url|off>   鑷畾涔夎儗鏅浘
-  --css <file>          瀹屽叏鑷畾涔夋牱寮忥紙璺宠繃涓婚鍚堟垚锛?  --port <n>            CDP 绔彛锛堥粯璁?9335锛?  --verify              鍙妫€鏌?  --revert              杩樺師瀹樻柟澶栬
-  --no-wait             涓嶇瓑娓叉煋灞傛寕杞藉畬灏辨敞鍏?`;
+  --list                List themes
+  --theme <id>          Apply theme (default ${DEFAULT_THEME})
+  --accent <hex>        Override accent color
+  --no-bg               Colors only, no background art
+  --bg <file|url|off>   Custom background image
+  --css <file>          Custom CSS file (skip theme compose)
+  --port <n>            CDP port (default 9335)
+  --verify              Read-only status check
+  --revert              Restore stock appearance
+  --no-wait             Inject without waiting for renderer
+`;
 
 function parseArgs(argv) {
   const out = {
@@ -54,7 +66,7 @@ function parseArgs(argv) {
     else { console.error(`unknown option: ${a}\n\n${HELP}`); process.exit(1); }
   }
   if (out.accent && !/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(out.accent)) {
-    console.error(`鉁?--accent 闇€瑕?#rgb / #rrggbb / #rrggbbaa 褰㈠紡锛屾敹鍒帮細${out.accent}`);
+    console.error(`--accent expects #rgb / #rrggbb / #rrggbbaa, got: ${out.accent}`);
     process.exit(1);
   }
   return out;
@@ -70,12 +82,12 @@ async function loadTheme(id) {
   try {
     raw = await readFile(file, 'utf8');
   } catch {
-    throw new Error(`涓婚涓嶅瓨鍦細${id}锛堟湡鏈?${file}锛塦);
+    throw new Error(`Theme not found: ${id} (expected ${file})`);
   }
   const theme = JSON.parse(raw);
   for (const k of ['background', 'panel', 'panelAlt', 'accent', 'accentAlt',
                    'secondary', 'highlight', 'text', 'muted', 'line']) {
-    if (!theme.colors?.[k]) throw new Error(`涓婚 ${id} 缂哄皯 colors.${k}`);
+    if (!theme.colors?.[k]) throw new Error(`Theme ${id} missing colors.${k}`);
   }
   return theme;
 }
@@ -83,10 +95,10 @@ async function loadTheme(id) {
 if (args.list) {
   let files = [];
   try { files = (await readdir(THEMES_DIR)).filter((f) => f.endsWith('.json')); } catch { /* none */ }
-  console.log('鍙敤涓婚锛?);
+  console.log('Available themes:');
   for (const f of files.sort()) {
     const t = JSON.parse(await readFile(path.join(THEMES_DIR, f), 'utf8'));
-    const mark = t.id === DEFAULT_THEME ? ' (榛樿)' : '';
+    const mark = t.id === DEFAULT_THEME ? ' (default)' : '';
     console.log(`  ${t.id.padEnd(16)} ${t.label ?? ''}${mark}`);
   }
   process.exit(0);
@@ -104,8 +116,8 @@ async function imageToDataUrl(spec) {
   const abs = path.isAbsolute(spec) ? spec : path.resolve(REPO, spec);
   const ext = path.extname(abs).toLowerCase();
   const mime = MIME[ext];
-  if (!mime) throw new Error(`涓嶆敮鎸佺殑鍥剧墖绫诲瀷锛?{ext || '(鏃犳墿灞曞悕)'} (${abs})`);
-  const buf = await readFile(abs);          // 鎵句笉鍒颁細鎶涘嚭甯﹁矾寰勭殑 ENOENT
+  if (!mime) throw new Error(`Unsupported image type: ${ext || '(no ext)'} (${abs})`);
+  const buf = await readFile(abs);
   return { url: `data:${mime};base64,${buf.toString('base64')}`, bytes: buf.length };
 }
 
@@ -181,7 +193,8 @@ const RUNTIME_SRC = `(() => {
   const TIBO_BOOT = __TIBO_STATE__;
   const doc = document, html = doc.documentElement;
 
-  // 涓?Codex Dream Skin 鍚屼竴濂楁湰鍦板伐鏃舵ā鍨嬶紙涓嶈浠讳綍 API / 鍑嵁锛?  const MONTHLY_CNY = 9000;
+  // Local work-clock model (no API / credentials)
+  const MONTHLY_CNY = 9000;
   const WORKDAYS = 23.5;
   const DAILY_CNY = MONTHLY_CNY / WORKDAYS;
   const WORK_START = 9 * 60;
@@ -215,7 +228,6 @@ const RUNTIME_SRC = `(() => {
   observer.observe(html, { childList: true });
   setTimeout(keepLast, 0);
 
-  /* ---- 浠婃棩绱閲戦锛堟湰鍦板伐鏃堕挓锛?--------------------------------------- */
   const fmt = (() => {
     try {
       return new Intl.NumberFormat('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -239,9 +251,7 @@ const RUNTIME_SRC = `(() => {
     return (m >= WORK_START && m < BREAK_START) || (m >= BREAK_END && m < WORK_END);
   };
 
-  /* ---- 鍓╀綑鐢ㄩ噺锛堝畼鏂?window.mimo.getUserUsage锛?------------------------
-     瀹炴祴 getUserUsage().usage.percent 灏辨槸銆屽墿浣欑敤閲忋€嶇櫨鍒嗘瘮锛堢敤鎴锋牳瀵逛负 55锛夛紝
-     涓嶈鍐嶅仛 100-percent銆?*/
+  // Remaining usage from official window.mimo.getUserUsage
   let usageCache = { remaining: null, used: null, resetDate: null, ok: false };
   const refreshUsage = async () => {
     try {
@@ -260,7 +270,6 @@ const RUNTIME_SRC = `(() => {
     return usageCache;
   };
 
-  /* ---- 绮掑瓙鍦猴紙瀵归綈鍘熺増 canvas sprite 娴侊級 ---------------------------- */
   const MODE_RGB = [64, 132, 232];
   const MODE_LIGHT_RGB = [108, 198, 255];
   const SPEED_MODES = [
@@ -368,8 +377,8 @@ const RUNTIME_SRC = `(() => {
       progress.setAttribute('data-earn-speed', mode.id);
       progress.setAttribute('role', 'button');
       progress.setAttribute('tabindex', '0');
-      progress.setAttribute('title', mode.label + ' 路 鐐瑰嚮鍒囨崲閫熷害');
-      progress.setAttribute('aria-label', '褰撳墠鍔ㄦ晥閫熷害 ' + mode.label + '锛岀偣鍑诲垏鎹?);
+      progress.setAttribute('title', mode.label + ' - click to change speed');
+      progress.setAttribute('aria-label', 'Effect speed ' + mode.label + ', click to switch');
     }
     if (persist) {
       try { localStorage.setItem(SPEED_KEY, mode.id); } catch { /* ignore */ }
@@ -421,7 +430,6 @@ const RUNTIME_SRC = `(() => {
     const dt = Math.min(now - (fieldLast || now), 50);
     fieldLast = now;
     const advance = hoverBoost ? dt * 1.6 : dt;
-    // fillX from --earning-ratio
     let ratio = 0;
     const ratioVar = parent.style.getPropertyValue('--earning-ratio')
       || el.style.getPropertyValue('--earning-ratio');
@@ -453,7 +461,6 @@ const RUNTIME_SRC = `(() => {
     ctx.globalAlpha = 1;
   };
   const spawnBurst = () => {
-    // 杩涘害鍙樺寲鏃朵粠濉厖鍓嶆部鐐稿紑涓€灏忔挳
     for (let i = 0; i < 10; i++) {
       const angle = (Math.random() - 0.5) * 1.2;
       sparks.push({
@@ -469,17 +476,16 @@ const RUNTIME_SRC = `(() => {
     }
   };
 
-  // Tibo 閲嶇疆淇″彿锛圢ode 娉ㄥ叆鏃舵姄鍙栫殑鍏紑鍔ㄦ€侊級
+  // Tibo reset signal (public posts fetched by Node injector)
   let tiboState = TIBO_BOOT;
   const compactSignal = (state) => {
-    if (!state) return '鈥?;
-    if (state.relevance === 'confirmed') return '宸查噸缃?;
+    if (!state) return '-';
+    if (state.relevance === 'confirmed') return 'Reset';
     if (Number(state.probability) >= 40) return state.probability + '%';
-    if (state.relevance === 'indirect') return '寰呰瀵?;
-    return '鈥?;
+    if (state.relevance === 'indirect') return 'Watch';
+    return '-';
   };
 
-  /* ---- 椤舵爮棰濆害 + Tibo 鑳跺泭锛堝榻愬師鐗?#codex-quota-pill锛?--------------- */
   const PILL_ID = 'mimo-quota-pill';
   const POPOVER_ID = 'mimo-quota-popover';
   let pillOpen = false;
@@ -503,7 +509,7 @@ const RUNTIME_SRC = `(() => {
       pop.id = POPOVER_ID;
       pop.className = 'mimo-quota-popover';
       pop.setAttribute('role', 'dialog');
-      pop.setAttribute('aria-label', '棰濆害涓績涓庨噸缃浄杈?);
+      pop.setAttribute('aria-label', 'Quota center and reset radar');
       doc.body.appendChild(pop);
     }
     const rem = usageCache.ok ? Math.round(usageCache.remaining) : null;
@@ -515,56 +521,56 @@ const RUNTIME_SRC = `(() => {
     const clock = String(now.getHours()).padStart(2, '0') + ':' +
       String(now.getMinutes()).padStart(2, '0') + ':' +
       String(now.getSeconds()).padStart(2, '0');
-    const keyPost = (tibo.keyPostText || tibo.latestPostText || '').replace(/\s+/g, ' ').trim().slice(0, 160);
+    const keyPost = (tibo.keyPostText || tibo.latestPostText || '').replace(/\\s+/g, ' ').trim().slice(0, 160);
     const keyUrl = tibo.keyPostUrl || tibo.latestPostUrl || '';
     const translation = tibo.translation || '';
     const understanding = tibo.understanding || tibo.summaryZh || tibo.reason || '';
-    const heroStatus = rem == null ? '鐢ㄩ噺鍚屾涓?
-      : rem < 20 ? '棰濆害鍋忎綆'
-      : rem < 40 ? '棰濆害涓瓑'
-      : '棰濆害鍏呰冻';
+    const heroStatus = rem == null ? 'Usage sync pending'
+      : rem < 20 ? 'Quota low'
+      : rem < 40 ? 'Quota medium'
+      : 'Quota OK';
 
     pop.innerHTML =
       '<header class="mqp-head">' +
-        '<div class="mqp-head-title"><strong>棰濆害涓績</strong><span>路</span><strong>閲嶇疆闆疯揪</strong></div>' +
-        '<time>' + clock + (tibo.freshness === 'stale' ? ' 路 缂撳瓨' : ' 路 瀹炴椂') + '</time>' +
+        '<div class="mqp-head-title"><strong>Quota</strong><span>-</span><strong>Radar</strong></div>' +
+        '<time>' + clock + (tibo.freshness === 'stale' ? ' - cache' : ' - live') + '</time>' +
       '</header>' +
       '<section class="mqp-hero">' +
         '<div class="mqp-hero-ring" role="progressbar" aria-valuemin="0" aria-valuemax="100"' +
-          (rem != null ? ' aria-valuenow="' + rem + '"' : '') + ' aria-label="棰濆害鍓╀綑鐧惧垎姣?>' +
+          (rem != null ? ' aria-valuenow="' + rem + '"' : '') + ' aria-label="Remaining quota percent">' +
           '<svg viewBox="0 0 120 120" aria-hidden="true">' +
             '<circle class="mqp-hero-track" cx="60" cy="60" r="48" pathLength="100"></circle>' +
             '<circle class="mqp-hero-fg" cx="60" cy="60" r="48" pathLength="100" transform="rotate(-90 60 60)" stroke-dasharray="' + remRatio.toFixed(3) + ' 100"></circle>' +
           '</svg>' +
-          '<span><strong>' + (rem != null ? rem : '鈥?) + '</strong><small>棰濆害</small></span>' +
+          '<span><strong>' + (rem != null ? rem : '-') + '</strong><small>Quota</small></span>' +
         '</div>' +
         '<div class="mqp-hero-stats">' +
-          '<span><small>宸茬敤棰濆害</small><strong>' + (used != null ? used + '%' : '鈥?) + '</strong></span>' +
-          '<span><small>鍓╀綑棰濆害</small><strong>' + (rem != null ? rem + '%' : '鈥?) + '</strong></span>' +
-          '<span><small>棰濆害鏇存柊</small><strong>' + (usageCache.resetDate || '鈥?) + '</strong></span>' +
+          '<span><small>Used</small><strong>' + (used != null ? used + '%' : '-') + '</strong></span>' +
+          '<span><small>Remaining</small><strong>' + (rem != null ? rem + '%' : '-') + '</strong></span>' +
+          '<span><small>Reset</small><strong>' + (usageCache.resetDate || '-') + '</strong></span>' +
         '</div>' +
         '<div class="mqp-hero-copy">' +
-          '<span>褰撳墠鐘舵€?/span>' +
+          '<span>Status</span>' +
           '<strong>' + heroStatus + '</strong>' +
-          '<em>' + (usageCache.ok ? 'MiMo 鐢ㄩ噺 路 宸插悓姝? : '绛夊緟鍚屾') + '</em>' +
+          '<em>' + (usageCache.ok ? 'MiMo usage - synced' : 'Waiting for sync') + '</em>' +
         '</div>' +
       '</section>' +
       '<section class="mqp-tibo">' +
         '<header class="mqp-tibo-head">' +
-          '<strong>Tibo 鍔ㄦ€?/strong>' +
-          (keyUrl ? '<a href="' + keyUrl + '" target="_blank" rel="noreferrer">鏌ョ湅鍔ㄦ€?/a>' : '') +
+          '<strong>Tibo feed</strong>' +
+          (keyUrl ? '<a href="' + keyUrl + '" target="_blank" rel="noreferrer">Open</a>' : '') +
           '<em data-level="' + (tibo.level || 'low') + '">' + sig + '</em>' +
         '</header>' +
-        '<div class="mqp-tibo-row"><small>鍏抽敭鍔ㄦ€?/small><p>' + (keyPost || '鏆傛棤鍏紑鍔ㄦ€?) + '</p></div>' +
+        '<div class="mqp-tibo-row"><small>Key post</small><p>' + (keyPost || 'No public posts') + '</p></div>' +
         (understanding
-          ? '<div class="mqp-tibo-row"><small>鐞嗚В</small><p>' + understanding + '</p></div>'
+          ? '<div class="mqp-tibo-row"><small>Notes</small><p>' + understanding + '</p></div>'
           : '') +
         (translation
-          ? '<div class="mqp-tibo-row"><small>缈昏瘧</small><p>' + translation + '</p></div>'
+          ? '<div class="mqp-tibo-row"><small>Translation</small><p>' + translation + '</p></div>'
           : '') +
       '</section>';
 
-    // 瀹氫綅鍒拌兌鍥婁笅鏂?    const rect = pill.getBoundingClientRect();
+    const rect = pill.getBoundingClientRect();
     pop.style.visibility = 'hidden';
     pop.style.display = 'block';
     const popW = Math.min(420, window.innerWidth - 24);
@@ -615,10 +621,10 @@ const RUNTIME_SRC = `(() => {
           '<rect x="3.5" y="5.5" width="17" height="15" rx="2.5"></rect>' +
           '<path d="M7.5 3.5v4M16.5 3.5v4M3.5 10h17"></path>' +
         '</svg>' +
-        '<span>棰濆害</span>' +
+        '<span>Quota</span>' +
       '</span>' +
       '<span class="mqp-meter" data-mqp="meter"><span></span></span>' +
-      '<strong class="mqp-percent" data-mqp="percent">鈥?/strong>';
+      '<strong class="mqp-percent" data-mqp="percent">-</strong>';
     tools.insertBefore(pill, tools.firstChild);
     pill.__mqpWired = true;
     pill.addEventListener('click', (e) => {
@@ -638,7 +644,7 @@ const RUNTIME_SRC = `(() => {
     const meterFill = pill.querySelector('.mqp-meter > span');
     const percent = pill.querySelector('.mqp-percent');
     const rem = usageCache.ok ? Math.round(usageCache.remaining) : null;
-    if (percent) percent.textContent = rem != null ? rem + '%' : '鈥?;
+    if (percent) percent.textContent = rem != null ? rem + '%' : '-';
     if (meterFill) {
       const ratio = rem != null ? Math.max(0, Math.min(1, rem / 100)) : 0;
       meterFill.style.willChange = 'transform';
@@ -646,36 +652,35 @@ const RUNTIME_SRC = `(() => {
     }
     pill.setAttribute('data-level', rem == null ? 'unavailable' : rem < 20 ? 'critical' : rem < 40 ? 'warning' : 'ok');
     pill.setAttribute('title', rem != null
-      ? '鍓╀綑鐢ㄩ噺 ' + rem + '%' + (usageCache.resetDate ? ' 路 閲嶇疆 ' + usageCache.resetDate : '')
-      : '鐢ㄩ噺涓嶅彲鐢?);
+      ? 'Remaining ' + rem + '%' + (usageCache.resetDate ? ' - reset ' + usageCache.resetDate : '')
+      : 'Usage unavailable');
     return pill;
   };
 
-  /* ---- 渚ф爮搴曢儴锛氬ご鍍?+ 涓€鍙ヨ瘽灏忓畤瀹欙紙鏃犲妗嗭紝瀵归綈鍘熺増璐﹀彿浣嶏級 -------- */
   const MUSE_QUOTES = [
-    '浠婂ぉ蹇冩儏缇庣編鍝掋€?,
-    '鎱㈡參鏉ワ紝姣旇緝蹇€?,
-    '鍐欎唬鐮佷篃瑕佸ソ濂藉悆楗€?,
-    '浠婂ぉ鐨勯锛屽儚浣犱竴鏍峰垰濂姐€?,
-    '鎶婇棶棰樻媶灏忥紝璺氨瀹戒簡銆?,
-    '鍏堝枬鍙ｆ按锛屽啀鏀逛笅涓€涓?bug銆?,
-    '鐏垫劅涓嶅湪璧惰矾锛屽湪鏁ｆ銆?,
-    '浣犲凡缁忔瘮鏄ㄥぉ鏇寸啛缁冧竴鐐逛簡銆?,
-    '灞忓箷涔嬪锛屼篃璁板緱鎶ご銆?,
-    '瀹屾垚姣斿畬缇庢洿鎺ヨ繎鍑哄彂銆?,
+    'Today feels lovely.',
+    'Slow is still fast.',
+    'Write code, then eat well.',
+    'The breeze matches your pace.',
+    'Shrink the problem; widen the path.',
+    'Sip water, then fix the next bug.',
+    'Inspiration walks, it does not rush.',
+    'You are a bit better than yesterday.',
+    'Look up from the screen sometimes.',
+    'Done is closer to start than perfect.',
   ];
   let museIndex = 0;
   try {
     const saved = Number(localStorage.getItem('mimo-dream-muse-index'));
     if (Number.isFinite(saved) && saved >= 0 && saved < MUSE_QUOTES.length) museIndex = saved;
   } catch { /* ignore */ }
-  // 鍘熺増 linzi-chat-avatar锛岀敱娉ㄥ叆鍣ㄤ互 data URL 濉叆
+  // Injected as data URL by the Node injector
   const MUSE_AVATAR = __MUSE_AVATAR__;
 
   const ensureSideMuse = () => {
     const bottom = document.querySelector('.side-bottom');
     if (!bottom) return null;
-    // 鍙敼鏂囨/澶村儚锛屼笉鏇挎崲鑺傜偣锛堝厠闅嗕細涓㈡帀 React 鐨勭偣鍑诲鐞嗭級
+    // Only rewrite label/avatar; keep the native node for React handlers
     const nativeBtn = bottom.querySelector('button[data-account-menu]');
     const nativeRow = nativeBtn?.parentElement || nativeBtn;
     if (nativeBtn) {
@@ -692,7 +697,6 @@ const RUNTIME_SRC = `(() => {
       if (avatar) avatar.classList.add('msm-native-avatar');
       const nativeImg = nativeBtn.querySelector('img.avatar-img, img');
       if (nativeImg && MUSE_AVATAR) {
-        // 姣忔娉ㄥ叆鐢ㄦ柊鐨?data URL锛堣鍒囧浘鍙兘宸叉洿鏂帮級
         if (nativeImg.src !== MUSE_AVATAR) {
           nativeImg.src = MUSE_AVATAR;
           nativeImg.setAttribute('data-msm', '1');
@@ -701,7 +705,8 @@ const RUNTIME_SRC = `(() => {
       doc.getElementById(MUSE_ID)?.remove();
       return nativeBtn;
     }
-    // 鍏滃簳锛氬師鐢熸寜閽笉鍦ㄦ椂鍐嶆敞鍏?    if (nativeRow) nativeRow.style.display = 'none';
+    // Fallback only when the native button is missing
+    if (nativeRow) nativeRow.style.display = 'none';
     let el = doc.getElementById(MUSE_ID);
     if (el && el.isConnected) return el;
     el?.remove();
@@ -737,7 +742,7 @@ const RUNTIME_SRC = `(() => {
   };
   ensureSideMuse();
   const museWatch = setInterval(ensureSideMuse, 2500);
-  // 鏂囨鑷姩闅忔満杞崲锛堢害 12s锛夛紝涓嶅崰鐢ㄧ偣鍑?  const museCycle = setInterval(cycleMuseQuote, 12000);
+  const museCycle = setInterval(cycleMuseQuote, 12000);
 
   const ensureEarning = () => {
     const bar = doc.querySelector('.composer-bar');
@@ -748,17 +753,16 @@ const RUNTIME_SRC = `(() => {
     el = doc.createElement('span');
     el.id = EARN_ID;
     el.className = 'mimo-earning';
-    // 缁撴瀯瀵归綈 Codex锛氶搴︾幆 + 宸ユ椂鑳跺泭锛堝唴鍚～鍏呮潯銆侀噾棰濄€侀噸缃俊鍙凤級
     el.innerHTML =
       '<span class="mimo-earning-progress">' +
         '<span class="mimo-earning-fill"></span>' +
         '<canvas class="mimo-earning-particles" aria-hidden="true"></canvas>' +
         '<span class="mimo-earning-value">' +
           '<span class="mimo-earning-amount">0.00</span>' +
-          '<span class="mimo-earning-signal"><span class="me-sig-label">閲嶇疆淇″彿</span><strong class="me-sig-val">鈥?/strong></span>' +
+          '<span class="mimo-earning-signal"><span class="me-sig-label">Reset</span><strong class="me-sig-val">-</strong></span>' +
         '</span>' +
       '</span>' +
-      '<span class="mimo-quota-ring" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-label="鍓╀綑鐢ㄩ噺">' +
+      '<span class="mimo-quota-ring" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-label="Remaining usage">' +
         '<svg viewBox="0 0 200 200" aria-hidden="true">' +
           '<circle class="mq-ring-track" cx="100" cy="100" r="82"></circle>' +
           '<circle class="mq-ring-fg" cx="100" cy="100" r="82" pathLength="100" transform="rotate(-90 100 100)"></circle>' +
@@ -799,38 +803,35 @@ const RUNTIME_SRC = `(() => {
     el.style.setProperty('--earning-ratio', ratio.toFixed(4));
     const progress = el.querySelector('.mimo-earning-progress');
     if (progress) progress.style.setProperty('--earning-ratio', ratio.toFixed(4));
-    // 瑙嗚鍔ㄦ晥鍏ㄦ椂娈靛父寮€锛涢噾棰濅粛鍙湪宸ヤ綔绐楀彛绱
     el.setAttribute('data-earn-state', 'working');
     el.setAttribute('data-earn-pct', String(earnPct));
     el.setAttribute('data-earn-amount', amount.toFixed(2));
     el.setAttribute('data-earn-clock', inWorkWindow(now) ? 'working' : 'idle');
 
-    // 鍓╀綑鐢ㄩ噺鐜細鐩存帴鏄剧ず API percent
     const ring = el.querySelector('.mimo-quota-ring');
     const ringNum = el.querySelector('.mq-ring-num b');
     const ringFg = el.querySelector('.mq-ring-fg');
     if (usageCache.ok) {
       const rem = Math.round(usageCache.remaining);
       if (ringNum) ringNum.textContent = String(rem);
-      // pathLength=100锛?1 琛ㄧず 51%锛屼笉瑕佸啀闄や互 100
       if (ringFg) ringFg.style.strokeDasharray = usageCache.remaining.toFixed(2) + ' 100';
       if (ring) {
         ring.setAttribute('aria-valuenow', String(rem));
-        ring.setAttribute('aria-valuetext', '鍓╀綑 ' + rem + '%');
+        ring.setAttribute('aria-valuetext', 'Remaining ' + rem + '%');
         ring.setAttribute('data-remaining', String(rem));
-        const tip = '鍓╀綑鐢ㄩ噺 ' + rem + '%锛堝凡鐢?' + Math.round(usageCache.used) + '%锛?
-          + (usageCache.resetDate ? ' 路 閲嶇疆 ' + usageCache.resetDate : '');
+        const tip = 'Remaining ' + rem + '% (used ' + Math.round(usageCache.used) + '%)'
+          + (usageCache.resetDate ? ' - reset ' + usageCache.resetDate : '');
         ring.setAttribute('title', tip);
-        el.setAttribute('title', tip + ' 路 浠婃棩绱 ' + text + ' 鍏?);
+        el.setAttribute('title', tip + ' - today ' + text + ' CNY');
       }
       el.setAttribute('data-quota-ok', '1');
     } else {
       if (ringNum) ringNum.textContent = '--';
       if (ringFg) ringFg.style.strokeDasharray = '0 100';
       el.setAttribute('data-quota-ok', '0');
-      el.setAttribute('title', '浠婃棩绱 ' + text + ' 鍏?);
+      el.setAttribute('title', 'Today ' + text + ' CNY');
     }
-    // Tibo 閲嶇疆淇″彿锛堝叕寮€鍔ㄦ€侊紝闈?MiMo 瀹樻柟閫氱煡锛?    const sigVal = el.querySelector('.me-sig-val');
+    const sigVal = el.querySelector('.me-sig-val');
     const sigText = compactSignal(tiboState);
     if (sigVal && sigVal.textContent !== sigText) sigVal.textContent = sigText;
     el.setAttribute('data-tibo-level', tiboState?.level || 'low');
@@ -838,8 +839,8 @@ const RUNTIME_SRC = `(() => {
     if (tiboState?.reason) {
       const sig = el.querySelector('.mimo-earning-signal');
       if (sig) {
-        sig.setAttribute('title', 'Tibo 閲嶇疆淇″彿锛堝叕寮€鍔ㄦ€侊級路 ' + tiboState.reason
-          + (tiboState.scannedPostCount ? ' 路 宸叉牳瀵?' + tiboState.scannedPostCount + ' 鏉? : ''));
+        sig.setAttribute('title', 'Tibo reset signal (public) - ' + tiboState.reason
+          + (tiboState.scannedPostCount ? ' - scanned ' + tiboState.scannedPostCount : ''));
       }
     }
     const prevRatio = parseFloat(el.getAttribute('data-earn-ratio') || '0');
@@ -850,15 +851,15 @@ const RUNTIME_SRC = `(() => {
     return { amount, earnPct, text, usage: usageCache, tibo: tiboState };
   };
 
-  // 鏃х増鏈彲鑳界暀涓嬫湭鐧昏鐨?interval锛屼細鎸佺画鎶婁笂涓嬫枃鐧惧垎姣斿啓鍥炪€?  // 杩欓噷鍙仛杞婚噺娓呯悊锛涘彲瑙佹€х敱 CSS 鐨?.ctx-hud-pct { display:none } 鍏滃簳銆?  const earnWatch = setInterval(() => {
+  const earnWatch = setInterval(() => {
     doc.querySelectorAll('.ctx-hud-pct').forEach((n) => n.remove());
     ensureEarning();
     paintEarning();
     paintHeaderPill();
-    // 鏉冮檺鏉￠噷杩戦粦鐨勫疄蹇冩寜閽細寮哄埗鎻愪寒锛岄伩鍏嶅绾镐笂鈥滈殣褰⑩€?    for (const btn of doc.querySelectorAll('button')) {
+    for (const btn of doc.querySelectorAll('button')) {
       const cs = getComputedStyle(btn);
       const bg = cs.backgroundColor;
-      const m = bg.match(/rgba?\(([^)]+)\)/);
+      const m = bg.match(/rgba?\\(([^)]+)\\)/);
       if (!m) continue;
       const p = m[1].split(',').map((s) => parseFloat(s));
       const a = p.length >= 4 ? p[3] : 1;
@@ -871,7 +872,7 @@ const RUNTIME_SRC = `(() => {
     }
   }, 1500);
 
-  // 鐐瑰嚮澶栭儴 / Escape 鍏抽棴璇︽儏鍗?  const onDocClick = (e) => {
+  const onDocClick = (e) => {
     if (!pillOpen) return;
     if (e.target.closest('#' + PILL_ID) || e.target.closest('#' + POPOVER_ID)) return;
     closePillPopover();
@@ -967,14 +968,14 @@ let targets;
 try {
   targets = await listTargets(args.port);
 } catch (err) {
-  console.error(`鉁?杩炰笉涓?CDP锛?27.0.0.1:${args.port}锛夛細${err.message}`);
-  console.error('  璇峰厛鐢ㄥ甫 --remote-debugging-port 鐨勬柟寮忓惎鍔?MiMo銆?);
+  console.error(`Cannot connect to CDP 127.0.0.1:${args.port}: ${err.message}`);
+  console.error('  Start MiMo with --remote-debugging-port first.');
   process.exit(2);
 }
 
 const target = pickRenderer(targets);
 if (!target) {
-  console.error(`鉁?鏈壘鍒版覆鏌撳眰鐩爣銆傚綋鍓?${targets.length} 涓?target锛歚);
+  console.error(`Renderer target not found. ${targets.length} target(s):`);
   for (const t of targets) console.error(`    ${t.type}  ${t.url}`);
   process.exit(3);
 }
@@ -998,7 +999,7 @@ async function waitRendererReady(c, timeoutMs = 45000) {
 }
 
 try {
-  console.log(`鈫?宸查檮鐫€ ${target.url}  (${target.title})`);
+  console.log(`Attached ${target.url}  (${target.title})`);
 
   if (args.verify) {
     const st = await conn.eval(`window.__mimoDreamSkin ? window.__mimoDreamSkin.state()
@@ -1014,30 +1015,29 @@ try {
                  if (e) e.remove();
                  document.documentElement.removeAttribute('data-mimo-skin-bg');
                  return { reverted: !!e, fallback: true }; })()`);
-    console.log(`鉁?宸茶繕鍘燂細${JSON.stringify(r)}`);
+    console.log(`Reverted: ${JSON.stringify(r)}`);
     conn.close();
     process.exit(0);
   }
 
   const built = await buildCss();
 
-  // Tibo 鍏紑鍔ㄦ€侊紙Node 渚ф姄鍙栵紱澶辫触鏃剁粰闄嶇骇鐘舵€侊紝涓嶉樆鏂敞鍏ワ級
-  console.log('  鎷夊彇 Tibo 鍔ㄦ€佲€?);
+  // Public Tibo feed (Node-side fetch; failure does not block inject)
+  console.log('  Fetching Tibo feed...');
   const tiboStateForRuntime = await refreshTiboRadar();
-  console.log(`  Tibo锛?{compactSignalText(tiboStateForRuntime)}  ${tiboStateForRuntime.reason || ''}`.slice(0, 160));
+  console.log(`  Tibo: ${compactSignalText(tiboStateForRuntime)}  ${tiboStateForRuntime.reason || ''}`.slice(0, 160));
 
-  // 渚ф爮灏忓畤瀹欏ご鍍忥細鍘熺増 linzi-chat-avatar
   let museAvatarDataUrl = 'null';
   try {
     const avatarPath = path.join(ROOT, 'assets', 'side-avatar.webp');
     const avatarBuf = await readFile(avatarPath);
-    museAvatarDataUrl = JSON.stringify('data:image/png;base64,' + avatarBuf.toString('base64'));
+    museAvatarDataUrl = JSON.stringify('data:image/webp;base64,' + avatarBuf.toString('base64'));
   } catch (err) {
-    console.log('  渚ф爮澶村儚璇诲彇澶辫触锛屽皢鐢ㄥ崰浣嶏細' + (err?.message || err));
+    console.log('  Side avatar read failed, placeholder used: ' + (err?.message || err));
   }
 
   let css = built.css;
-  let bgNote = '鏃?;
+  let bgNote = 'none';
 
   if (!css) {
     let bgVar = 'none';
@@ -1045,25 +1045,25 @@ try {
       const img = await imageToDataUrl(built.bgSpec);
       if (typeof img === 'string') {
         bgVar = `url("${img}")`;
-        bgNote = `杩滅▼ URL`;
+        bgNote = 'remote URL';
       } else {
         bgVar = `url("${img.url}")`;
-        bgNote = `鍐呰仈 ${img.bytes.toLocaleString()} 瀛楄妭`;
+        bgNote = `inline ${img.bytes.toLocaleString()} bytes`;
       }
     }
     css = composeThemeCss(built.theme, bgVar);
     if (built.theme) {
-      console.log(`  涓婚 ${built.theme.id}銆?{built.theme.label}銆? 鎻掔敾锛?{bgNote}`);
+      console.log(`  Theme ${built.theme.id} (${built.theme.label})  bg: ${bgNote}`);
     }
   } else {
-    console.log(`  鑷畾涔夋牱寮忥細${built.source}`);
+    console.log(`  Custom CSS: ${built.source}`);
   }
 
   if (args.wait) {
     const ready = await waitRendererReady(conn);
     console.log(ready && ready.theme
-      ? `  娓叉煋灞傚凡灏辩华锛坮eadyState=${ready.readyState}, #app=${ready.hasApp}, theme=${ready.theme}锛塦
-      : `  鈿?绛夊緟瓒呮椂锛屾寜褰撳墠鐘舵€佹敞鍏ワ紙${JSON.stringify(ready)}锛塦);
+      ? `  Renderer ready (readyState=${ready.readyState}, #app=${ready.hasApp}, theme=${ready.theme})`
+      : `  Wait timeout, injecting with current state (${JSON.stringify(ready)})`);
   }
 
   const hasBg = !built.css && (built.bgSpec ? true : false);
@@ -1088,25 +1088,25 @@ try {
   );
   const ok = st && st.stylePresent;
 
-  console.log(`鉁?娉ㄥ叆瀹屾垚  鏍峰紡 ${payload.cssBytes} 瀛楄妭  ${payload.created ? '锛堟柊寤鸿妭鐐癸級' : '锛堟洿鏂拌妭鐐癸級'}`);
-  console.log(`  鑳屾櫙鎻掔敾锛?{hasBg ? '宸插紑鍚? : '鏈紑鍚?}`);
+  console.log(`Injected  style ${payload.cssBytes} bytes  ${payload.created ? '(created)' : '(updated)'}`);
+  console.log(`  Background art: ${hasBg ? 'on' : 'off'}`);
   console.log(`  --color-main-bg  ${st?.mainBg}`);
   console.log(`  --color-side     ${st?.sideBg}`);
   console.log(`  --color-txt-strong ${st?.txt}`);
   console.log(`  --color-accent   ${st?.accent}`);
   if (st?.earningPresent) {
-    console.log('  浠婃棩绱锛? + (st.earningAmount ?? '鈥?) + ' 鍏? 杩涘害 ' + (st.earningPct ?? '鈥?) + '%  (' + st.earningState + ')');
-    console.log('  鍓╀綑鐢ㄩ噺锛? + (st.remaining != null ? st.remaining + '%' : '涓嶅彲鐢?) +
-      (st.usageCache?.resetDate ? '  閲嶇疆 ' + st.usageCache.resetDate : ''));
+    console.log('  Today earned: ' + (st.earningAmount ?? '-') + ' CNY  progress ' + (st.earningPct ?? '-') + '%  (' + st.earningState + ')');
+    console.log('  Remaining: ' + (st.remaining != null ? st.remaining + '%' : 'unavailable') +
+      (st.usageCache?.resetDate ? '  reset ' + st.usageCache.resetDate : ''));
     if (st.tibo) {
-      console.log('  Tibo 淇″彿锛? + (st.tibo.signalText || '鈥?) + '  ' + (st.tibo.freshness || '') + '  ' + (st.tibo.reason || '').slice(0, 80));
+      console.log('  Tibo signal: ' + (st.tibo.signalText || '-') + '  ' + (st.tibo.freshness || '') + '  ' + (st.tibo.reason || '').slice(0, 80));
     }
   }
 
   conn.close();
   process.exit(ok ? 0 : 4);
 } catch (err) {
-  console.error(`鉁?${err.message}`);
+  console.error(`Error: ${err.message}`);
   conn.close();
   process.exit(4);
 }
