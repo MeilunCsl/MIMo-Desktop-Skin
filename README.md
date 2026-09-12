@@ -10,6 +10,8 @@ Clone and run: no npm dependencies, no `node_modules`, no local credentials, no 
 
 ## Preview
 
+Product site (bilingual, launcher progress demo): open [`site/index.html`](./site/index.html) in a browser.
+
 Sakura Coast skin on a clean **New Task** view (projects collapsed):
 
 ![MiMo home — new task](./docs/images/mimo-home.png)

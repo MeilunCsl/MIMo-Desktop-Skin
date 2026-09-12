@@ -10,6 +10,8 @@
 
 ## 效果预览
 
+产品站（中英双语 + 启动器进度示意）：浏览器打开 [`site/index.html`](./site/index.html)。
+
 樱花海岸皮肤 · **新建任务** 视图（项目已收起）：
 
 ![MiMo 主页 — 新建任务](./docs/images/mimo-home.png)

@@ -47,7 +47,8 @@ $links = @(
 foreach ($link in $links) {
   $shortcut = $shell.CreateShortcut($link)
   $shortcut.TargetPath = $powerShell
-  $shortcut.Arguments = "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$launcher`""
+  # Visible window so the launcher progress UI is not a silent flash.
+  $shortcut.Arguments = "-NoProfile -STA -ExecutionPolicy Bypass -File `"$launcher`""
   $shortcut.WorkingDirectory = $projectRoot
   $shortcut.IconLocation = $iconLocation
   $shortcut.Description = 'Start MiMo Dream Skin'

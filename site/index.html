@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MiMo Desktop Skin — 樱花海岸</title>
+  <meta name="description" content="给 Xiaomi MiMo 桌面版换肤。通过本机回环 CDP 注入主题，不修改安装目录。" />
+  <link rel="icon" href="./assets/mimo.png" />
+  <style>
+    :root {
+      --bg: #F1F8FC;
+      --panel: #F7FBFF;
+      --panel-alt: #E7F3FB;
+      --accent: #478ED5;
+      --accent-alt: #F3A4BE;
+      --secondary: #6AB7DB;
+      --highlight: #7C9AD2;
+      --text: #23456E;
+      --muted: #7189A0;
+      --line: #BAD7EA;
+      --ok: #3E8F7A;
+      --warn: #C97B3D;
+      --radius: 18px;
+      --shadow: 0 18px 50px rgba(35, 69, 110, 0.10);
+      --font: "Segoe UI", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif;
+      --mono: "Cascadia Code", "SF Mono", Consolas, "Courier New", monospace;
+      --max: 1080px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: var(--font);
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+    }
+    img { max-width: 100%; display: block; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    a:focus-visible, button:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 3px;
+      border-radius: 8px;
+    }
+    code, kbd, pre { font-family: var(--mono); }
+
+    /* —— chrome —— */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      backdrop-filter: blur(14px);
+      background: rgba(247, 251, 255, 0.82);
+      border-bottom: 1px solid rgba(186, 215, 234, 0.7);
+    }
+    .topbar-inner {
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: 14px 22px;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 650;
+      letter-spacing: 0.01em;
+      color: var(--text);
+      text-decoration: none;
+    }
+    .brand img { width: 28px; height: 28px; border-radius: 8px; }
+    .brand span small {
+      display: block;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+    }
+    .nav {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .nav a, .lang-btn {
+      font-size: 13.5px;
+      color: var(--text);
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      background: transparent;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .nav a:hover { background: var(--panel-alt); text-decoration: none; }
+    .lang-btn {
+      border-color: var(--line);
+      background: var(--panel);
+      color: var(--muted);
+      font-size: 12.5px;
+    }
+    .lang-btn[aria-pressed="true"] {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    /* —— hero —— */
+    .hero {
+      position: relative;
+      overflow: hidden;
+      min-height: min(92vh, 820px);
+      display: grid;
+      align-items: end;
+    }
+    .hero-art {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(180deg, rgba(241,248,252,0.15) 0%, rgba(241,248,252,0.55) 55%, rgba(241,248,252,0.96) 100%),
+        url("./assets/sakura-coast.webp") center 35% / cover no-repeat;
+    }
+    .petals {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .petal {
+      position: absolute;
+      top: -20px;
+      width: 10px;
+      height: 14px;
+      background: radial-gradient(circle at 30% 30%, #fff, var(--accent-alt));
+      border-radius: 60% 40% 55% 45%;
+      opacity: 0.55;
+      animation: fall linear infinite;
+    }
+    @keyframes fall {
+      0% { transform: translate3d(0, -10vh, 0) rotate(0deg); }
+      100% { transform: translate3d(40px, 110vh, 0) rotate(360deg); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .petal, .bar-fill, .pulse, .fade-up { animation: none !important; }
+      html { scroll-behavior: auto; }
+    }
+
+    .hero-inner {
+      position: relative;
+      z-index: 1;
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: 88px 22px 56px;
+      width: 100%;
+    }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: rgba(247, 251, 255, 0.88);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 6px 12px;
+      margin-bottom: 18px;
+    }
+    .eyebrow i {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--accent);
+      display: inline-block;
+    }
+    h1 {
+      margin: 0 0 14px;
+      font-size: clamp(2.2rem, 5vw, 3.6rem);
+      line-height: 1.12;
+      letter-spacing: -0.02em;
+      font-weight: 700;
+      max-width: 14ch;
+    }
+    .lede {
+      margin: 0 0 28px;
+      max-width: 46ch;
+      font-size: clamp(1rem, 1.5vw, 1.15rem);
+      color: #3d6288;
+    }
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 36px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 44px;
+      padding: 0 18px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      font: inherit;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .btn:hover { text-decoration: none; transform: translateY(-1px); }
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 10px 24px rgba(71, 142, 213, 0.35);
+    }
+    .btn-primary:hover { background: #3b7fbe; }
+    .btn-ghost {
+      background: rgba(247, 251, 255, 0.9);
+      border-color: var(--line);
+      color: var(--text);
+    }
+    .hero-shot {
+      border-radius: 20px;
+      overflow: hidden;
+      border: 1px solid rgba(186, 215, 234, 0.9);
+      box-shadow: var(--shadow);
+      background: var(--panel);
+    }
+    .hero-shot img { width: 100%; height: auto; }
+
+    /* —— sections —— */
+    section {
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: 72px 22px;
+    }
+    .section-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    h2 {
+      margin: 0;
+      font-size: clamp(1.55rem, 2.5vw, 2rem);
+      letter-spacing: -0.015em;
+      line-height: 1.2;
+    }
+    .section-head p {
+      margin: 0;
+      color: var(--muted);
+      max-width: 42ch;
+      font-size: 15px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 16px;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 22px;
+      box-shadow: 0 8px 24px rgba(35, 69, 110, 0.04);
+    }
+    .card h3 {
+      margin: 0 0 8px;
+      font-size: 1.05rem;
+    }
+    .card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14.5px;
+    }
+    .card.span-4 { grid-column: span 4; }
+    .card.span-6 { grid-column: span 6; }
+    .card.span-8 { grid-column: span 8; }
+    .card.span-12 { grid-column: span 12; }
+    @media (max-width: 860px) {
+      .card.span-4, .card.span-6, .card.span-8 { grid-column: span 12; }
+    }
+
+    .icon-chip {
+      width: 36px; height: 36px;
+      border-radius: 12px;
+      display: grid; place-items: center;
+      background: var(--panel-alt);
+      color: var(--accent);
+      margin-bottom: 14px;
+      font-size: 16px;
+    }
+
+    /* launcher demo */
+    .launcher-demo {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 20px;
+      align-items: stretch;
+    }
+    @media (max-width: 860px) {
+      .launcher-demo { grid-template-columns: 1fr; }
+    }
+    .launcher-shell {
+      background: linear-gradient(160deg, var(--panel), var(--panel-alt));
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 28px;
+      box-shadow: var(--shadow);
+      min-height: 240px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .launcher-shell h3 {
+      margin: 0 0 6px;
+      font-size: 1.25rem;
+    }
+    .launcher-shell .status {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 22px;
+      min-height: 1.4em;
+    }
+    .bar-track {
+      height: 14px;
+      border-radius: 999px;
+      background: #dcebf6;
+      overflow: hidden;
+      position: relative;
+    }
+    .bar-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--accent), var(--accent-alt));
+      box-shadow: 0 0 18px rgba(71, 142, 213, 0.45);
+      transition: width 0.15s linear;
+    }
+    .bar-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 14px;
+      font-size: 13.5px;
+      color: var(--muted);
+    }
+    .bar-meta strong {
+      color: var(--text);
+      font-size: 15px;
+      font-variant-numeric: tabular-nums;
+    }
+    .launcher-gif {
+      border-radius: 18px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      display: flex;
+      flex-direction: column;
+    }
+    .launcher-gif img { width: 100%; }
+    .launcher-gif figcaption {
+      padding: 12px 16px;
+      font-size: 13px;
+      color: var(--muted);
+      border-top: 1px solid var(--line);
+    }
+
+    /* install */
+    .steps {
+      display: grid;
+      gap: 12px;
+      counter-reset: step;
+    }
+    .step {
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 14px;
+      align-items: start;
+      padding: 18px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+    }
+    .step::before {
+      counter-increment: step;
+      content: counter(step, decimal-leading-zero);
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent);
+      background: var(--panel-alt);
+      border-radius: 12px;
+      width: 48px;
+      height: 48px;
+      display: grid;
+      place-items: center;
+    }
+    .step h3 { margin: 0 0 4px; font-size: 1rem; }
+    .step p { margin: 0 0 10px; color: var(--muted); font-size: 14px; }
+    .term {
+      margin-top: 10px;
+      background: #1b334d;
+      color: #d7ebff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 13px;
+      overflow-x: auto;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .term .prompt { color: #8ec8ff; user-select: none; }
+    .copy-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-top: 8px;
+    }
+    .copy-btn {
+      font: inherit;
+      font-size: 12.5px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 6px 12px;
+      cursor: pointer;
+      min-height: 32px;
+    }
+    .copy-btn:hover { background: var(--panel-alt); }
+    .copy-btn[data-copied="true"] {
+      border-color: var(--ok);
+      color: var(--ok);
+    }
+
+    /* security / structure */
+    .list-plain {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 10px;
+    }
+    .list-plain li {
+      display: grid;
+      grid-template-columns: 18px 1fr;
+      gap: 10px;
+      font-size: 14.5px;
+      color: #3d6288;
+    }
+    .list-plain li::before {
+      content: "";
+      width: 10px; height: 10px;
+      margin-top: 7px;
+      border-radius: 50%;
+      background: var(--secondary);
+      box-shadow: 0 0 0 4px rgba(106, 183, 219, 0.18);
+    }
+
+    .tree {
+      font-family: var(--mono);
+      font-size: 12.5px;
+      line-height: 1.7;
+      color: #3d6288;
+      white-space: pre;
+      overflow-x: auto;
+      margin: 0;
+    }
+
+    /* footer */
+    footer {
+      border-top: 1px solid var(--line);
+      background: rgba(247, 251, 255, 0.8);
+      padding: 28px 22px 40px;
+    }
+    .footer-inner {
+      max-width: var(--max);
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px 24px;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: 13.5px;
+    }
+
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .badge {
+      font-size: 12px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: var(--panel-alt);
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+
+    .pulse {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--ok);
+      display: inline-block;
+      box-shadow: 0 0 0 0 rgba(62, 143, 122, 0.5);
+      animation: pulse 1.8s ease-out infinite;
+    }
+    @keyframes pulse {
+      70% { box-shadow: 0 0 0 10px rgba(62, 143, 122, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(62, 143, 122, 0); }
+    }
+
+    .note {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 10px;
+    }
+
+    /* i18n visibility */
+    [data-i18n-en] { display: none; }
+    html[lang="en"] [data-i18n-zh] { display: none; }
+    html[lang="en"] [data-i18n-en] { display: revert; }
+    html[lang="en"] h1[data-i18n-en],
+    html[lang="en"] h2[data-i18n-en],
+    html[lang="en"] h3[data-i18n-en],
+    html[lang="en"] p[data-i18n-en],
+    html[lang="en"] li[data-i18n-en],
+    html[lang="en"] span[data-i18n-en] { display: block; }
+    html[lang="en"] span.inline-i18n[data-i18n-en] { display: inline; }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="#top">
+        <img src="./assets/mimo.png" alt="" />
+        <span>MiMo Desktop Skin<small>SAKURA COAST</small></span>
+      </a>
+      <nav class="nav" aria-label="Primary">
+        <a href="#preview"><span data-i18n-zh>预览</span><span data-i18n-en>Preview</span></a>
+        <a href="#features"><span data-i18n-zh>能力</span><span data-i18n-en>Features</span></a>
+        <a href="#install"><span data-i18n-zh>安装</span><span data-i18n-en>Install</span></a>
+        <a href="#security"><span data-i18n-zh>安全</span><span data-i18n-en>Security</span></a>
+        <a href="https://github.com/MeilunCsl/MIMo-Desktop-Skin" target="_blank" rel="noreferrer">GitHub</a>
+        <button class="lang-btn" id="langBtn" type="button" aria-pressed="false" title="Language">中 / EN</button>
+      </nav>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero" aria-label="Hero">
+      <div class="hero-art" aria-hidden="true"></div>
+      <div class="petals" id="petals" aria-hidden="true"></div>
+      <div class="hero-inner">
+        <div class="eyebrow"><i></i><span data-i18n-zh>非官方 · 本机 CDP 注入</span><span data-i18n-en>Unofficial · local CDP inject</span></div>
+        <h1>
+          <span data-i18n-zh>给 MiMo 桌面版<br />穿上樱花海岸</span>
+          <span data-i18n-en>Sakura Coast<br />for MiMo Desktop</span>
+        </h1>
+        <p class="lede">
+          <span data-i18n-zh>不改安装目录、不碰 app.asar。克隆仓库，一条快捷方式启动，主题 CSS 通过 127.0.0.1 注入。</span>
+          <span data-i18n-en>No install-dir edits, no app.asar changes. Clone once, launch from a shortcut, inject CSS over loopback.</span>
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="#install">
+            <span data-i18n-zh>开始安装</span><span data-i18n-en>Get started</span>
+          </a>
+          <a class="btn btn-ghost" href="https://github.com/MeilunCsl/MIMo-Desktop-Skin" target="_blank" rel="noreferrer">GitHub</a>
+        </div>
+        <figure class="hero-shot">
+          <img src="./assets/mimo-home.png" width="1440" height="900" alt="MiMo home with Sakura Coast skin applied" />
+        </figure>
+      </div>
+    </section>
+
+    <section id="preview">
+      <div class="section-head">
+        <div>
+          <h2><span data-i18n-zh>真实界面预览</span><span data-i18n-en>Live interface preview</span></h2>
+          <p>
+            <span data-i18n-zh>新建任务视图 · 项目已收起 · 樱花海岸主题已注入。</span>
+            <span data-i18n-en>New-task view · projects collapsed · Sakura Coast injected.</span>
+          </p>
+        </div>
+        <div class="badge-row">
+          <span class="badge">sakura-coast</span>
+          <span class="badge">127.0.0.1 CDP</span>
+          <span class="badge">Windows 10+</span>
+          <span class="badge">Node 22+</span>
+        </div>
+      </div>
+
+      <div class="launcher-demo" id="launcher">
+        <div class="launcher-shell" aria-live="polite">
+          <div class="eyebrow" style="margin-bottom:12px"><i></i><span data-i18n-zh>启动器进度</span><span data-i18n-en>Launcher progress</span></div>
+          <h3>MiMo Dream Skin</h3>
+          <div class="status" id="launchStatus">
+            <span data-i18n-zh>准备启动…</span><span data-i18n-en>Preparing…</span>
+          </div>
+          <div class="bar-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="launchBar">
+            <div class="bar-fill" id="launchFill"></div>
+          </div>
+          <div class="bar-meta">
+            <span>
+              <span class="pulse" aria-hidden="true"></span>
+              <span data-i18n-zh>预估启动 · 等待就绪</span><span data-i18n-en>Estimated start · waiting</span>
+            </span>
+            <strong id="launchPct">0%</strong>
+          </div>
+          <p class="note">
+            <span data-i18n-zh>网页为示意动画。桌面启动器使用同款进度语义：预估封顶 94%，工作进程成功后到 100%。</span>
+            <span data-i18n-en>Web demo mirrors the desktop launcher: estimate caps at 94%, worker success sets 100%.</span>
+          </p>
+        </div>
+        <figure class="launcher-gif">
+          <img src="./assets/mimo-launch-progress.gif" alt="Launcher progress animation" />
+          <figcaption>
+            <span data-i18n-zh>启动器进度条动图 · 就绪后拉起 MiMo</span>
+            <span data-i18n-en>Launcher progress GIF · then starts MiMo</span>
+          </figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section id="features">
+      <div class="section-head">
+        <div>
+          <h2><span data-i18n-zh>这套皮肤做了什么</span><span data-i18n-en>What this skin does</span></h2>
+          <p>
+            <span data-i18n-zh>只覆盖设计 token 与少量运行时节点，尽量少碰业务 DOM。</span>
+            <span data-i18n-en>Overrides design tokens and a few runtime nodes — minimal DOM surgery.</span>
+          </p>
+        </div>
+      </div>
+      <div class="grid">
+        <article class="card span-4">
+          <div class="icon-chip">01</div>
+          <h3><span data-i18n-zh>语义色 → MiMo token</span><span data-i18n-en>Semantic colors → tokens</span></h3>
+          <p>
+            <span data-i18n-zh>10 个主题色合成约 70 个 --color-* 变量，浅色侧栏、主区、输入框自动跟色。</span>
+            <span data-i18n-en>10 theme colors compose into ~70 --color-* tokens so sidebar, main, and composer stay coherent.</span>
+          </p>
+        </article>
+        <article class="card span-4">
+          <div class="icon-chip">02</div>
+          <h3><span data-i18n-zh>墙纸与玻璃感</span><span data-i18n-en>Wallpaper & glass</span></h3>
+          <p>
+            <span data-i18n-zh>插画铺在窗口级，面板半透明 + 轻磨砂，保证插画可见、正文可读。</span>
+            <span data-i18n-en>Artwork paints at window level; panels use light translucency so art shows without killing legibility.</span>
+          </p>
+        </article>
+        <article class="card span-4">
+          <div class="icon-chip">03</div>
+          <h3><span data-i18n-zh>额度环与今日累计</span><span data-i18n-en>Quota ring & today</span></h3>
+          <p>
+            <span data-i18n-zh>输入区显示剩余额度环、今日本地工时累计，以及公开 X 动态信号。</span>
+            <span data-i18n-en>Composer shows remaining quota, local work-clock total, and public X reset signals.</span>
+          </p>
+        </article>
+        <article class="card span-6">
+          <div class="icon-chip">04</div>
+          <h3><span data-i18n-zh>启动器进度条</span><span data-i18n-en>Launcher progress</span></h3>
+          <p>
+            <span data-i18n-zh>桌面启动器动画窗口：预估进度封顶 94%，注入成功到 100% 再关闭。</span>
+            <span data-i18n-en>Desktop launcher window estimates up to 94%, then 100% after a successful inject.</span>
+          </p>
+        </article>
+        <article class="card span-6">
+          <div class="icon-chip">05</div>
+          <h3><span data-i18n-zh>「重置信号」只是公开动态</span><span data-i18n-en>Reset signal is public feed</span></h3>
+          <p>
+            <span data-i18n-zh>只读取 x.com 公开时间线并本地分类，不是官方通知，失败不影响换肤。</span>
+            <span data-i18n-en>Reads public x.com posts only, classifies locally. Not official. Failures never block theming.</span>
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section id="install">
+      <div class="section-head">
+        <div>
+          <h2><span data-i18n-zh>三步装好</span><span data-i18n-en>Three steps</span></h2>
+          <p>
+            <span data-i18n-zh>Windows 10+ · 已装 Xiaomi MiMo · Node.js 22+ 在 PATH 中。</span>
+            <span data-i18n-en>Windows 10+ · Xiaomi MiMo installed · Node.js 22+ on PATH.</span>
+          </p>
+        </div>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <div>
+            <h3><span data-i18n-zh>克隆仓库</span><span data-i18n-en>Clone the repo</span></h3>
+            <p>
+              <span data-i18n-zh>无 npm 依赖，克隆即可用。</span>
+              <span data-i18n-en>No npm dependencies.</span>
+            </p>
+            <div class="term" id="cmd1"><span class="prompt">$ </span>git clone https://github.com/MeilunCsl/MIMo-Desktop-Skin.git<br />cd MIMo-Desktop-Skin</div>
+            <div class="copy-row">
+              <button class="copy-btn" type="button" data-copy="cmd1">
+                <span data-i18n-zh>复制命令</span><span data-i18n-en>Copy</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="step">
+          <div>
+            <h3><span data-i18n-zh>安装快捷方式</span><span data-i18n-en>Install the shortcut</span></h3>
+            <p>
+              <span data-i18n-zh>创建桌面「MiMo 皮肤」入口，图标使用小米 MiMo 应用图标。</span>
+              <span data-i18n-en>Creates a desktop shortcut using the Xiaomi MiMo app icon.</span>
+            </p>
+            <div class="term" id="cmd2"><span class="prompt">&gt; </span>powershell -NoProfile -ExecutionPolicy Bypass -File .\mimo\scripts\install-launch-shortcuts.ps1</div>
+            <div class="copy-row">
+              <button class="copy-btn" type="button" data-copy="cmd2">
+                <span data-i18n-zh>复制命令</span><span data-i18n-en>Copy</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="step">
+          <div>
+            <h3><span data-i18n-zh>双击启动</span><span data-i18n-en>Double-click to launch</span></h3>
+            <p>
+              <span data-i18n-zh>用快捷方式启动（父进程是 explorer.exe）。MiMo 已在托盘时先完全退出。</span>
+              <span data-i18n-en>Launch from the shortcut (parent is explorer.exe). Fully quit tray MiMo first if it is running.</span>
+            </p>
+            <div class="term" id="cmd3"><span class="prompt">&gt; </span>powershell -NoProfile -STA -ExecutionPolicy Bypass -File .\Start-MiMo.ps1</div>
+            <div class="copy-row">
+              <button class="copy-btn" type="button" data-copy="cmd3">
+                <span data-i18n-zh>复制命令</span><span data-i18n-en>Copy</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="note">
+        <span data-i18n-zh>还原官方外观：</span><span data-i18n-en>Restore stock UI:</span>
+        <code>powershell -NoProfile -ExecutionPolicy RemoteSigned -File .\Start-MiMo.ps1 -Revert</code>
+      </p>
+    </section>
+
+    <section id="security">
+      <div class="section-head">
+        <div>
+          <h2><span data-i18n-zh>安全边界</span><span data-i18n-en>Security boundaries</span></h2>
+          <p>
+            <span data-i18n-zh>仓库与运行时都按「最小权限」设计。</span>
+            <span data-i18n-en>Repo and runtime are designed with least privilege.</span>
+          </p>
+        </div>
+      </div>
+      <div class="grid">
+        <article class="card span-6">
+          <h3><span data-i18n-zh>会做什么</span><span data-i18n-en>What it does</span></h3>
+          <ul class="list-plain" style="margin-top:14px">
+            <li><span data-i18n-zh>CDP 只绑定 127.0.0.1</span><span data-i18n-en>CDP binds only to 127.0.0.1</span></li>
+            <li><span data-i18n-zh>运行态写入 %LOCALAPPDATA%\MiMoDreamSkin</span><span data-i18n-en>State under %LOCALAPPDATA%\MiMoDreamSkin</span></li>
+            <li><span data-i18n-zh>读取官方 usage 接口展示额度</span><span data-i18n-en>Reads official usage API for quota display</span></li>
+            <li><span data-i18n-zh>可选读取 X 公开动态作重置提示</span><span data-i18n-en>Optional public X posts for reset hints</span></li>
+          </ul>
+        </article>
+        <article class="card span-6">
+          <h3><span data-i18n-zh>不会做什么</span><span data-i18n-en>What it never does</span></h3>
+          <ul class="list-plain" style="margin-top:14px">
+            <li><span data-i18n-zh>不包含 API key / Cookie / Token</span><span data-i18n-en>No API keys, cookies, or tokens</span></li>
+            <li><span data-i18n-zh>不读取 userData 本地 API 凭据文件</span><span data-i18n-en>Does not read userData credential files</span></li>
+            <li><span data-i18n-zh>不上传聊天内容，不改安装文件</span><span data-i18n-en>No chat upload, no install-file edits</span></li>
+            <li><span data-i18n-zh>仓库不含本机绝对路径</span><span data-i18n-en>No machine-specific absolute paths in repo</span></li>
+          </ul>
+        </article>
+        <article class="card span-12">
+          <h3><span data-i18n-zh>仓库结构</span><span data-i18n-en>Repository layout</span></h3>
+          <pre class="tree" style="margin-top:12px">Start-MiMo.ps1                 # 根入口 / root entry
+Start-Codex.ps1                # 启动器宿主（进度条 UI）/ launcher host
+mimo/Start-MiMo-Skin.ps1       # 定位 exe、快捷方式、CDP
+mimo/scripts/inject-skin.mjs   # CDP 注入 + 运行时
+mimo/scripts/theme-css.mjs     # 语义色 → token
+mimo/scripts/tibo-radar.mjs    # 公开 X 动态
+mimo/assets/themes/            # 主题 JSON
+mimo/assets/*.webp             # 插画与头像
+windows/launcher/              # WebView2 启动器（可选 SDK）
+docs/images/                   # 站点与 README 图
+site/                          # 本产品站</pre>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+      <div>
+        <strong style="color:var(--text)">MiMo Desktop Skin</strong>
+        <div>
+          <span data-i18n-zh>非官方第三方工具 · 请自行确认版本与素材许可</span>
+          <span data-i18n-en>Unofficial third-party tool · verify versions and asset licenses yourself</span>
+        </div>
+      </div>
+      <div>
+        <a href="https://github.com/MeilunCsl/MIMo-Desktop-Skin" target="_blank" rel="noreferrer">GitHub</a>
+        ·
+        <a href="https://github.com/MeilunCsl/MIMo-Desktop-Skin/blob/main/README.zh-CN.md" target="_blank" rel="noreferrer">README</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      const root = document.documentElement;
+      const langBtn = document.getElementById("langBtn");
+      const saved = localStorage.getItem("mimo-site-lang");
+      if (saved === "en" || saved === "zh") {
+        root.lang = saved === "en" ? "en" : "zh-CN";
+      }
+      langBtn.setAttribute("aria-pressed", root.lang.startsWith("en") ? "true" : "false");
+      langBtn.addEventListener("click", () => {
+        const en = !root.lang.startsWith("en");
+        root.lang = en ? "en" : "zh-CN";
+        localStorage.setItem("mimo-site-lang", en ? "en" : "zh");
+        langBtn.setAttribute("aria-pressed", en ? "true" : "false");
+      });
+
+      // petals
+      const petals = document.getElementById("petals");
+      if (petals && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        for (let i = 0; i < 14; i++) {
+          const el = document.createElement("span");
+          el.className = "petal";
+          el.style.left = Math.random() * 100 + "%";
+          el.style.animationDuration = 8 + Math.random() * 10 + "s";
+          el.style.animationDelay = -Math.random() * 12 + "s";
+          el.style.transform = "scale(" + (0.6 + Math.random() * 0.9) + ")";
+          petals.appendChild(el);
+        }
+      }
+
+      // launcher progress loop (estimate → 94 → 100)
+      const fill = document.getElementById("launchFill");
+      const pct = document.getElementById("launchPct");
+      const status = document.getElementById("launchStatus");
+      const bar = document.getElementById("launchBar");
+      const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const texts = {
+        zh: ["准备启动…", "正在启动 · 等待就绪", "注入 sakura-coast…", "启动完成"],
+        en: ["Preparing…", "Starting · waiting for ready", "Applying sakura-coast…", "Ready"],
+      };
+      function label(i) {
+        const lang = root.lang.startsWith("en") ? "en" : "zh";
+        return texts[lang][i];
+      }
+      function setP(p, msgIdx) {
+        fill.style.width = p + "%";
+        pct.textContent = Math.round(p) + "%";
+        bar.setAttribute("aria-valuenow", String(Math.round(p)));
+        status.textContent = label(msgIdx);
+      }
+      function runLaunch() {
+        if (reduce) { setP(100, 3); return; }
+        const t0 = performance.now();
+        const dur = 3200;
+        function frame(now) {
+          const t = Math.min(1, (now - t0) / dur);
+          // ease-out to 94, then step to 100
+          let p;
+          if (t < 0.82) {
+            p = 8 + 86 * (1 - Math.pow(1 - t / 0.82, 3)) * 0.92;
+            p = Math.min(94, p);
+            setP(p, t < 0.35 ? 0 : 1);
+          } else if (t < 1) {
+            const u = (t - 0.82) / 0.18;
+            setP(94 + 6 * u, 2);
+          } else {
+            setP(100, 3);
+            setTimeout(() => { t0reset(); }, 1600);
+            return;
+          }
+          requestAnimationFrame(frame);
+        }
+        requestAnimationFrame(frame);
+      }
+      function t0reset() {
+        setP(0, 0);
+        setTimeout(runLaunch, 500);
+      }
+      setP(0, 0);
+      setTimeout(runLaunch, 600);
+
+      // copy buttons
+      document.querySelectorAll(".copy-btn[data-copy]").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const id = btn.getAttribute("data-copy");
+          const node = document.getElementById(id);
+          if (!node) return;
+          const text = node.innerText.replace(/^[>$]\s/, "").trim();
+          try {
+            await navigator.clipboard.writeText(text);
+            btn.dataset.copied = "true";
+            setTimeout(() => { btn.dataset.copied = "false"; }, 1600);
+          } catch (_) {
+            /* ignore */
+          }
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
