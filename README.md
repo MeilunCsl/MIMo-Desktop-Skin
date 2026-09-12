@@ -16,7 +16,7 @@ Sakura Coast on a clean **New Task** view (projects collapsed):
 
 ![MiMo home — new task](./docs/images/mimo-home.png)
 
-Launcher UI sample (local runs use real stage percentages):
+Launcher window (real capture — progress follows worker `PROGRESS` stages):
 
 ![Launcher progress](./docs/images/mimo-launch-progress.gif)
 

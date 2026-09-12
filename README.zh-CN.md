@@ -16,7 +16,7 @@
 
 ![MiMo 主页 — 新建任务](./docs/images/mimo-home.png)
 
-启动器界面示意（本机运行时百分比来自真实阶段）：
+启动器窗口（真实截图录帧 — 进度跟随工作进程 `PROGRESS` 阶段）：
 
 ![启动器进度](./docs/images/mimo-launch-progress.gif)
 
