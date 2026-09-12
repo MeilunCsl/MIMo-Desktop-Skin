@@ -1,0 +1,33 @@
+{
+  "schema": "mimo-dream-skin-theme/1",
+  "id": "sakura-coast",
+  "label": "樱花海岸",
+  "source": "windows/assets/presets/preset-sakura-coast/theme.json",
+  "image": "windows/assets/presets/preset-sakura-coast/sakura-coast.webp",
+  "appearance": "auto",
+  "colors": {
+    "background": "#F1F8FC",
+    "panel": "#F7FBFF",
+    "panelAlt": "#E7F3FB",
+    "accent": "#478ED5",
+    "accentAlt": "#F3A4BE",
+    "secondary": "#6AB7DB",
+    "highlight": "#7C9AD2",
+    "text": "#23456E",
+    "muted": "#7189A0",
+    "line": "#BAD7EA"
+  },
+  "art": {
+    "focusX": 0.78,
+    "focusY": 0.5,
+    "safeArea": "left",
+    "taskMode": "ambient"
+  },
+  "glass": {
+    "panel": 0.18,
+    "sidebar": 0.14,
+    "main": 0.10,
+    "composer": 0.68,
+    "blur": 4
+  }
+}

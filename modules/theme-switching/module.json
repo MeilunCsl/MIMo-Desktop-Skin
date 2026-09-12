@@ -1,0 +1,46 @@
+{
+  "id": "theme-switching",
+  "name": "主题切换",
+  "runtimeEntry": "windows/assets/renderer-inject.js",
+  "scriptEntry": "windows/scripts/switch-dream-skin.ps1",
+  "functions": [
+    "applyTheme",
+    "applyArtMetadata",
+    "setActiveBackgroundVariant",
+    "themeOptions",
+    "setActiveThemeOption",
+    "nativeThemeOption",
+    "ensureBackgroundSwitcher",
+    "Initialize-DreamSkinThemeStore",
+    "Set-DreamSkinActiveTheme",
+    "Use-DreamSkinSavedTheme"
+  ],
+  "storageKeys": [
+    "codex-dream-background-variant",
+    "codex-dream-theme-selection"
+  ],
+  "configFiles": [
+    "windows/assets/theme.json",
+    "windows/assets/presets/<id>/theme.json"
+  ],
+  "cssContracts": [
+    "--ds-*",
+    "--dream-skin-*",
+    "data-dream-background-variant",
+    "data-dream-theme-id",
+    "data-dream-art-*"
+  ],
+  "safeToCustomize": [
+    "名称和文案",
+    "背景 variant",
+    "颜色 token",
+    "背景构图焦点",
+    "主题图片"
+  ],
+  "mustPreserve": [
+    "相对资源路径和主题目录边界",
+    "active-theme / saved themes 的隔离",
+    "热更新时不重启 Codex",
+    "settings route 返回后恢复 skin mode"
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "schema": "mimo-dream-skin-theme/1",
+  "id": "doraemon",
+  "label": "哆啦A梦",
+  "source": "windows/assets/presets/preset-doraemon/theme.json",
+  "image": "windows/assets/presets/preset-doraemon/doraemon-sky-rooftop.webp",
+  "appearance": "auto",
+  "colors": {
+    "background": "#EAF8FF",
+    "panel": "#F7FCFF",
+    "panelAlt": "#DDF3FF",
+    "accent": "#168BD1",
+    "accentAlt": "#E53935",
+    "secondary": "#63CBE8",
+    "highlight": "#F4C542",
+    "text": "#103B60",
+    "muted": "#527391",
+    "line": "#B9DDF0"
+  },
+  "art": {
+    "focusX": 0.78,
+    "focusY": 0.52,
+    "safeArea": "left",
+    "taskMode": "ambient"
+  },
+  "glass": {
+    "panel": 0.16,
+    "sidebar": 0.12,
+    "main": 0.08,
+    "composer": 0.66,
+    "blur": 4
+  },
+  "assets": {
+    "pet": "windows/assets/presets/preset-doraemon/doraemon-avatar.webp",
+    "sidebarCompanion": "windows/assets/presets/preset-doraemon/doraemon-companion.webp",
+    "composerCompanion": "windows/assets/presets/preset-doraemon/doraemon-companion.webp"
+  }
+}

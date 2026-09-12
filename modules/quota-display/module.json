@@ -1,0 +1,42 @@
+{
+  "id": "quota-display",
+  "name": "额度显示",
+  "runtimeEntry": "windows/assets/renderer-inject.js",
+  "functions": [
+    "requestQuotaBridge",
+    "readQuotaFromCodexBridge",
+    "readQuotaFromDom",
+    "normalizeQuotaState",
+    "refreshQuotaFromBridge",
+    "ensureQuota"
+  ],
+  "domIds": [
+    "codex-quota-pill",
+    "codex-quota-popover",
+    "codex-quota-panel",
+    "codex-quota-composer-portal"
+  ],
+  "storageKeys": [
+    "codex-dream-quota-state",
+    "codex-dream-quota-radar"
+  ],
+  "configKeys": [
+    "quota.enabled",
+    "quota.showInHeader",
+    "quota.showInEnvironment",
+    "quota.refreshMs",
+    "quota.radar.refreshMs"
+  ],
+  "nativeSource": "/wham/usage via window.electronBridge.sendMessageFromView",
+  "fallbacks": [
+    "codex:quota-update event",
+    "quota-sized DOM surfaces",
+    "localStorage cache"
+  ],
+  "mustPreserve": [
+    "不直接读取账户 token",
+    "按月/周/5小时窗口规范化",
+    "额度回升时不覆盖更可信的旧值",
+    "无数据时显示 unavailable/loading 而不是伪造百分比"
+  ]
+}

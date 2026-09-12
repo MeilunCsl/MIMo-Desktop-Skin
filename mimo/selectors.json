@@ -1,0 +1,90 @@
+{
+  "schema": "mimo-dream-skin-selectors/2",
+  "description": "Xiaomi MiMo Desktop 换肤选择器契约。",
+  "verifiedAgainst": {
+    "app": "26.911.111529",
+    "electron": "41.7.2",
+    "chromium": "146.0.7680.216",
+    "rendererUrl": "app://-/renderer/index.html",
+    "date": "2026-09-12",
+    "method": "本机回环 CDP 附着 + Runtime.evaluate；登录态真实实例（10137 个元素）",
+    "note": "v1 里的 data-slot 锚点是从静态 CSS 猜的，实测为 0 个，已在 v2 移除。"
+  },
+
+  "appearanceSignal": {
+    "dark": "html[data-theme=\"dark\"]",
+    "light": "html[data-theme=\"light\"]",
+    "unset": "属性缺席时走 prefers-color-scheme 兜底（与 App 自身 applyTheme.ts 一致）",
+    "verified": "实测 html 元素没有 class 参与主题表达（htmlClass 为空），不要用 .dark 之类的类名判断；但渲染层 CSS 里存在 60 处 .dark\\: 前缀的工具类，那是 Tailwind 变体名，不是主题判断依据。"
+  },
+
+  "criticalConstraint": {
+    "issue": "MiMo 不只在 :root 声明 token，它还在比 :root 更具体的作用域里重新声明，会盖掉挂在 :root 上的覆盖值。",
+    "evidence": [
+      "#app.plat-win32 => --color-side-glass: var(--color-side)",
+      "html:not([data-theme=\"dark\"]) #app.plat-win32, html:not([data-theme=\"dark\"]) #app.plat-linux => --color-side: #f8f7f5; --color-line: #f0ebe5; --color-panel: #fff; --color-main-bg: #fff",
+      "html:not([data-theme=\"dark\"]) .auto-view => --color-panel: #fdfdfd; --color-bg: #fcfcfd; --color-line: #ececed",
+      "[data-theme=\"dark\"] => 同名 token 的深色版本"
+    ],
+    "measuredOverrideMechanisms": {
+      ":root": "失效 —— 侧栏仍解析出官方 #f8f7f5",
+      ":root + !important": "失效 —— 侧栏仍解析出官方 #f8f7f5（:root 上的值变了，但子树不吃）",
+      ":root, :root * + !important": "生效 —— 侧栏变为皮肤值",
+      "镜像应用的平台选择器 + !important": "生效，但依赖枚举应用私有选择器，会随版本失效"
+    },
+    "chosen": ":root, :root * { --color-X: var(--skin-X) !important } 的「私有变量 + 通配投射」。不依赖枚举私有选择器。",
+    "consequence": "还原必须靠移除 <style> 节点，不能靠再注一层空覆盖。"
+  },
+
+  "strategy": {
+    "primary": "覆盖 --color-* 设计 token，不依赖 DOM 结构。",
+    "reason": "实测 185 个 --color-*；token 名比 DOM 结构稳定得多。渲染层大量使用映射到 token 的 Tailwind 工具类（.text-mut ×836、.hover\\:bg-side-hover ×428、.text-txt-strong ×179、.border-line ×177、.text-dim ×110），所以 token 覆盖会自动贯穿整个界面。",
+    "avoid": [
+      "assets/*.js|css 的 hash 文件名（每次发版必变）",
+      "--tw-* 变量（Tailwind 内部实现）",
+      "data-slot（实测不存在）"
+    ]
+  },
+
+  "verified": {
+    "shell": [
+      { "key": "root", "selector": "#root", "required": true, "note": "React 挂载点" },
+      { "key": "app", "selector": "#app", "required": true, "note": "实测 <div id=\"app\" class=\"relative flex h-screen plat-win32\">；平台类名 plat-win32 会参与 token 作用域" },
+      { "key": "platformClass", "selector": "#app.plat-win32", "required": true, "note": "应用用它做平台级 token 重声明，皮肤必须知道它存在" },
+      { "key": "sidebar", "selector": "aside[class*=\"bg-side-glass\"]", "note": "实测 <aside class=\"relative flex h-full flex-none flex-col bg-side-glass …\">，无 id" },
+      { "key": "infoPanel", "selector": "#info-panel", "note": "实测 aside#info-panel.info-panel.hidden" },
+      { "key": "rightPanel", "selector": "#right-panel", "note": "实测 aside#right-panel.right-panel.rp-white-context.hidden —— rp-white-context 表示它会强制白色上下文" },
+      { "key": "main", "selector": "main.relative.flex.min-w-0", "note": "实测；背景来自 --color-main-bg" },
+      { "key": "header", "selector": "header.chat-header", "note": "实测 header.chat-header.pointer-events-none.absolute" },
+      { "key": "nav", "selector": "nav.flex.w-full.flex-none" },
+      { "key": "convItem", "selector": ".conv-item", "note": "实测 6 个，形如 div.conv-item.sidebar-compact-row.group" },
+      { "key": "composer", "selector": "#composer", "note": "实测 div#composer.composer，背景为 --color-input-bg" },
+      { "key": "composerInput", "selector": "#composer-input", "note": "实测 textarea#composer-input.composer-input.relative.z-[1]" },
+      { "key": "spinePreview", "selector": ".spine-preview" },
+      { "key": "iconBtn", "selector": ".icon-btn", "note": "实测 338 个" },
+      { "key": "loginGate", "selector": "#login-gate-checking", "note": "未登录时的门禁；已登录实例上不存在" },
+      { "key": "startupLoader", "selector": ".startup-loader__logo, .startup-loader__base, .startup-loader__overlay", "note": "index.html 内联" }
+    ],
+    "stableAttrs": ["data-theme", "data-reduce-motion", "data-state", "data-selectable", "data-msg-act", "data-icon", "data-stage-visible", "data-fc-file-row", "data-info-artifact"],
+    "testids": {
+      "count": 153,
+      "distinct": ["markdown-table-scroller", "markdown-table-preview", "markdown-table-copy"],
+      "note": "data-testid 只用在 markdown 表格上，不适合当通用锚点。"
+    }
+  },
+
+  "notVerifiedOrAbsent": [
+    "data-slot 属性 —— 实测 0 个，v1 的猜测作废。",
+    "未做交互态验证：hover / focus / 禁用 / 弹层（菜单、对话框、popper）在皮肤下的表现没有逐项截图确认。",
+    "未验证：应用自身的主题切换（设置里切浅色/深色）在皮肤注入后是否仍能正常工作。",
+    "未验证：登录流程中是否会重载文档（当前实例从注入到 54 秒后 runtime 仍在，说明稳态下不重载；但登录动作本身未观测）。"
+  ],
+
+  "hostSurfaces": {
+    "preloadBridge": "window.mimo（contextIsolation 开启，唯一暴露的命名空间）",
+    "apiSample": ["isDesktop", "platform", "winMinimize", "winMaximizeToggle", "winClose", "quitApp", "apm"],
+    "officialIconApi": "mimo:listAppIcons / mimo:setAppIcon（官方唯一外观定制项）",
+    "customCssApi": "无 —— 官方不提供任何样式注入或主题扩展口子。CDP 注入是唯一能做出可见换肤的路径。",
+    "localApiCredential": "userData/desktop-api.json 内含 {port, token}，属本机 API 凭据。皮肤不得读取、记录或提交。"
+  }
+}

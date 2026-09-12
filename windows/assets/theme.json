@@ -1,0 +1,194 @@
+{
+  "schemaVersion": 1,
+  "id": "preset-linzi-dream-skin",
+  "name": "Linzi Dream Skin",
+  "brandSubtitle": "CODEX DREAM SKIN",
+  "tagline": "把柔光与玫瑰带进今天的工作台。",
+  "projectPrefix": "选择项目 · ",
+  "projectLabel": "◉  选择项目",
+  "statusText": "Online",
+  "quote": "MAKE SOMETHING WONDERFUL",
+  "workMoodRotationMs": 30000,
+  "workMoods": [
+    "先完成，再完美。",
+    "把复杂的事拆小一点。",
+    "专注十分钟，也算前进。",
+    "现在适合安静地推进。",
+    "把手头这一件做好。",
+    "慢一点，思路会自己排好队。",
+    "今天的灵感正在加载。",
+    "清空一个小任务，再继续。",
+    "留一点耐心给自己。",
+    "这一步完成，下一步就会变轻。",
+    "今天也会有一点点进展。",
+    "给想法一点时间，它会长出来。"
+  ],
+  "image": "art-20260723-110310-676-9fed1156.webp",
+  "defaultBackgroundVariant": "sakura-coast",
+  "backgroundVariants": [
+    {
+      "id": "garden",
+      "label": "清新绿色",
+      "image": "art-20260723-110310-676-9fed1156.webp",
+      "colors": {
+        "background": "#F0F8F3",
+        "panel": "#FFFFFF",
+        "panelAlt": "#E8F2EC",
+        "accent": "#3F897E",
+        "accentAlt": "#8BCB60",
+        "secondary": "#72B7A8",
+        "highlight": "#4F8F81",
+        "text": "#24514A",
+        "muted": "#64837C",
+        "line": "#B7D8CF"
+      },
+      "art": {
+        "focusX": 0.76,
+        "focusY": 0.43,
+        "safeArea": "left",
+        "taskMode": "off"
+      }
+    },
+    {
+      "id": "sakura-coast",
+      "label": "樱花海岸",
+      "image": "presets/preset-sakura-coast/sakura-coast.webp",
+      "colors": {
+        "background": "#F1F8FC",
+        "panel": "#F7FBFF",
+        "panelAlt": "#E7F3FB",
+        "accent": "#478ED5",
+        "accentAlt": "#F3A4BE",
+        "secondary": "#6AB7DB",
+        "highlight": "#7C9AD2",
+        "text": "#23456E",
+        "muted": "#7189A0",
+        "line": "#BAD7EA"
+      },
+      "art": {
+        "focusX": 0.78,
+        "focusY": 0.5,
+        "safeArea": "left",
+        "taskMode": "ambient"
+      }
+    },
+    {
+      "id": "doraemon",
+      "label": "哆啦A梦",
+      "image": "presets/preset-doraemon/doraemon-sky-rooftop.webp",
+      "colors": {
+        "background": "#EAF8FF",
+        "panel": "#F7FCFF",
+        "panelAlt": "#DDF3FF",
+        "accent": "#168BD1",
+        "accentAlt": "#E53935",
+        "secondary": "#63CBE8",
+        "highlight": "#F4C542",
+        "text": "#103B60",
+        "muted": "#527391",
+        "line": "#B9DDF0"
+      },
+      "art": {
+        "focusX": 0.78,
+        "focusY": 0.52,
+        "safeArea": "left",
+        "taskMode": "ambient"
+      },
+      "identity": {
+        "name": "哆啦A梦",
+        "brandSubtitle": "DORAEMON CODEX",
+        "tagline": "把未来道具带进今天的工作台。",
+        "statusText": "随身在线",
+        "quote": "只要有梦想，就能到达。",
+        "workMoods": [
+          "从口袋里拿出一点专注。",
+          "先把眼前这件事做好。",
+          "遇到难题，慢慢拆开就好。",
+          "今天也一起推进一点点。",
+          "休息一下，再继续出发。"
+        ]
+      },
+      "assets": {
+        "pet": "presets/preset-doraemon/doraemon-avatar.webp",
+        "sidebarCompanion": "presets/preset-doraemon/doraemon-companion.webp",
+        "sidebarAccountAvatar": "presets/preset-doraemon/doraemon-avatar.webp",
+        "composerCompanion": "presets/preset-doraemon/doraemon-companion.webp"
+      }
+    }
+  ],
+  "experience": {
+    "schemaVersion": 1,
+    "id": "linzi-dream-experience",
+    "label": "Linzi Dream 工作流模板",
+    "slots": {
+      "sidebar": {
+        "companionRole": "sidebar",
+        "accountRole": "account"
+      },
+      "header": {
+        "order": ["theme", "recommendation", "quota"]
+      },
+      "chat": {
+        "assistantRole": "assistant"
+      },
+      "composer": {
+        "companionRole": "composer",
+        "ring": "quota",
+        "probability": "reset"
+      }
+    },
+    "capabilities": {
+      "theme": true,
+      "quota": true,
+      "recommendation": true,
+      "characters": true,
+      "ring": true,
+      "probability": true
+    },
+    "states": {
+      "idle": {
+        "sidebarPose": "idle",
+        "chatPose": "idle",
+        "composerPose": "ready"
+      },
+      "working": {
+        "sidebarPose": "working",
+        "chatPose": "working",
+        "composerPose": "working"
+      },
+      "complete": {
+        "sidebarPose": "complete",
+        "chatPose": "complete",
+        "composerPose": "ready"
+      },
+      "error": {
+        "sidebarPose": "error",
+        "chatPose": "error",
+        "composerPose": "error"
+      },
+      "offline": {
+        "sidebarPose": "offline",
+        "chatPose": "offline",
+        "composerPose": "offline"
+      }
+    }
+  },
+  "appearance": "auto",
+  "art": {
+    "focusX": 0.76,
+    "focusY": 0.43,
+    "safeArea": "left",
+    "taskMode": "off"
+  },
+  "quota": {
+    "enabled": true,
+    "showInHeader": true,
+    "showInEnvironment": false,
+    "refreshMs": 15000,
+    "radar": {
+      "refreshMs": 600000,
+      "modelRefreshMs": 300000,
+      "tiboRefreshMs": 900000
+    }
+  }
+}

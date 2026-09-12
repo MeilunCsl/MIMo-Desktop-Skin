@@ -1,0 +1,23 @@
+# Local launchers and diagnostics
+*.lnk
+tmp/
+artifacts/
+design-qa.md
+docs/qa/screenshots/
+
+# Runtime state and logs
+.codex-dream-skin/
+*.log
+*.tmp
+*.bak
+*.bak-*
+.workbuddy/
+effect-preview*.png
+windows/assets/launcher-redesign-draft.html
+windows/launcher/lib/*.dll
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

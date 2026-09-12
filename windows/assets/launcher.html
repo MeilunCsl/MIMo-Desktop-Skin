@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Codex 启动器</title>
+<style>
+:root{
+  --font:"Segoe UI Variable Text","Segoe UI","Microsoft YaHei UI","PingFang SC",sans-serif;
+  --ink:#1d2940;
+  --muted:#8491a5;
+  --line:rgba(112,132,168,.14);
+  --blue:#3977ef;
+  --blue2:#69b7ff;
+
+  --c1:#3977ef;
+  --c2:#4e9df8;
+  --c3:#78c7ff;
+  --glow:#73c9ff;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  min-height:100vh;
+  display:grid;
+  place-items:center;
+  padding:18px;
+  font-family:var(--font);
+  color:var(--ink);
+  background:
+    radial-gradient(760px 360px at 50% -10%,rgba(91,139,216,.13),transparent 68%),
+    linear-gradient(155deg,#f5f7fb 0%,#edf1f7 56%,#e7ecf4 100%);
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ===== window ===== */
+.window{
+  width:min(430px,calc(100vw - 24px));
+  overflow:hidden;
+  border-radius:18px;
+  border:1px solid rgba(255,255,255,.92);
+  background:rgba(255,255,255,.82);
+  box-shadow:0 24px 64px rgba(39,57,91,.17),0 3px 12px rgba(39,57,91,.07);
+  backdrop-filter:blur(24px) saturate(1.16);
+}
+.titlebar{
+  height:44px;
+  padding:0 8px 0 14px;
+  display:flex;
+  align-items:center;
+  border-bottom:1px solid var(--line);
+  background:rgba(255,255,255,.5);
+  user-select:none;
+}
+.app-title{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:12.5px;
+  font-weight:650;
+  color:#536078;
+}
+.logo{
+  width:20px;height:20px;border-radius:6px;
+  display:grid;place-items:center;
+  color:#fff;
+  background:linear-gradient(145deg,#111c30,#263650);
+  box-shadow:0 4px 11px rgba(19,31,54,.17);
+}
+.logo svg{width:12px;height:12px}
+.controls{margin-left:auto;display:flex;gap:2px}
+.controls button{
+  width:34px;height:28px;border:0;border-radius:7px;
+  background:transparent;color:#758198;display:grid;place-items:center;
+}
+.controls button:hover{background:rgba(90,110,150,.09)}
+.controls .close:hover{background:#e81123;color:#fff}
+.controls svg{width:11px;height:11px}
+
+/* ===== startup selection ===== */
+.content{
+  padding:20px;
+}
+.select-view{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.select-heading{
+  padding:2px 2px 8px;
+}
+.select-title{
+  font-size:15px;
+  line-height:1.25;
+  font-weight:760;
+  color:#19243a;
+}
+.select-subtitle{
+  margin-top:5px;
+  font-size:11.5px;
+  color:#8b97a9;
+}
+
+.launch-option{
+  position:relative;
+  width:100%;
+  min-height:68px;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:12px 13px;
+  border:1px solid rgba(118,140,178,.16);
+  border-radius:14px;
+  background:rgba(248,250,253,.76);
+  color:inherit;
+  font:inherit;
+  text-align:left;
+  cursor:pointer;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.82);
+  transition:
+    transform .15s ease,
+    border-color .16s ease,
+    box-shadow .16s ease,
+    background .16s ease;
+}
+.launch-option:hover{
+  transform:translateY(-1px);
+  border-color:rgba(71,128,222,.28);
+  background:rgba(250,252,255,.96);
+  box-shadow:
+    0 7px 20px rgba(57,91,145,.08),
+    inset 0 1px 0 rgba(255,255,255,.92);
+}
+.launch-option:active{
+  transform:translateY(0);
+}
+.launch-option:focus-visible{
+  outline:2px solid rgba(61,125,240,.34);
+  outline-offset:2px;
+}
+
+.option-icon{
+  width:40px;height:40px;
+  flex:0 0 auto;
+  display:grid;
+  place-items:center;
+  border-radius:12px;
+  color:#55779e;
+  background:linear-gradient(145deg,#edf3fb,#e5edf8);
+  box-shadow:inset 0 0 0 1px rgba(101,132,181,.08);
+}
+.option-icon svg{width:21px;height:21px}
+.launch-option.primary .option-icon{
+  color:#fff;
+  background:linear-gradient(145deg,#3679ec,#65b5ff);
+  box-shadow:
+    0 5px 14px rgba(57,125,240,.20),
+    inset 0 1px 0 rgba(255,255,255,.24);
+}
+
+.option-copy{
+  min-width:0;
+  flex:1 1 auto;
+}
+.option-top{
+  display:flex;
+  align-items:center;
+  gap:7px;
+}
+.option-title{
+  font-size:13.5px;
+  line-height:1.25;
+  font-weight:720;
+  color:#22304a;
+}
+.badge{
+  padding:2px 6px 2.5px;
+  border-radius:999px;
+  font-size:9.5px;
+  line-height:1;
+  font-weight:700;
+  color:#527aa6;
+  background:rgba(90,154,235,.10);
+  border:1px solid rgba(90,154,235,.12);
+}
+.option-desc{
+  margin-top:4px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:11px;
+  color:#8b97aa;
+}
+
+.option-end{
+  flex:0 0 auto;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  color:#a0aabd;
+}
+.kbd{
+  min-width:22px;
+  height:20px;
+  padding:0 6px;
+  display:grid;
+  place-items:center;
+  border-radius:6px;
+  font-family:"Cascadia Code","SFMono-Regular",monospace;
+  font-size:9.5px;
+  font-weight:700;
+  color:#7b8799;
+  background:rgba(233,238,246,.85);
+  border:1px solid rgba(125,145,180,.12);
+}
+.chev{
+  width:14px;height:14px;
+  transition:transform .15s ease,color .15s ease;
+}
+.launch-option:hover .chev{
+  transform:translateX(2px);
+  color:#6584ac;
+}
+
+.footer-hint{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  padding:4px 3px 0;
+  font-size:10.5px;
+  color:#9aa5b6;
+}
+.footer-dot{
+  width:4px;height:4px;border-radius:50%;
+  background:#aab5c5;
+}
+
+/* ===== progress view ===== */
+.progress-view{
+  display:none;
+}
+.progress-view.on{
+  display:block;
+  animation:fadeIn .22s ease both;
+}
+.select-view.off{
+  display:none;
+}
+@keyframes fadeIn{
+  from{opacity:0;transform:translateY(3px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+.progress{
+  width:100%;
+}
+.portal{
+  position:relative;
+  width:100%;
+  height:28px;
+  overflow:visible;
+  isolation:isolate;
+}
+.track{
+  position:absolute;
+  inset:0;
+  overflow:hidden;
+  border-radius:999px;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.66),transparent 46%),
+    linear-gradient(108deg,rgba(243,248,255,.98),rgba(229,240,255,.96));
+  box-shadow:
+    inset 0 1px 1px rgba(255,255,255,.8),
+    inset 0 -1px rgba(125,151,204,.10),
+    0 1px 3px rgba(83,120,180,.10),
+    0 4px 14px rgb(64 132 232/.10);
+}
+.fill{
+  position:absolute;
+  inset:0;
+  z-index:1;
+  border-radius:inherit;
+  overflow:hidden;
+  transform:scaleX(0);
+  transform-origin:left center;
+  transition:transform 640ms linear,filter .45s ease;
+  background:linear-gradient(100deg,var(--c1) 0%,var(--c2) 52%,var(--c3) 100%);
+  box-shadow:inset 0 1px rgba(255,255,255,.34);
+  will-change:transform;
+}
+.fill::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:
+    radial-gradient(80px 26px at 16% 45%,rgba(255,255,255,.22),transparent 72%),
+    linear-gradient(180deg,rgba(255,255,255,.18),transparent 48%);
+  mix-blend-mode:screen;
+  pointer-events:none;
+}
+.head{
+  position:absolute;
+  top:0;bottom:0;left:0;
+  width:24px;
+  margin-left:-12px;
+  z-index:4;
+  border-radius:50%;
+  background:radial-gradient(closest-side,
+    rgba(255,255,255,.98),
+    color-mix(in srgb,var(--glow) 72%,transparent) 46%,
+    transparent 80%);
+  filter:blur(1.15px);
+  box-shadow:
+    0 0 12px color-mix(in srgb,var(--glow) 38%,transparent),
+    0 0 24px color-mix(in srgb,var(--glow) 22%,transparent);
+  opacity:0;
+  pointer-events:none;
+  transition:transform 640ms linear;
+}
+.head.on{
+  opacity:1;
+  animation:headPulse 1650ms ease-in-out infinite;
+}
+@keyframes headPulse{
+  0%,100%{opacity:.54;scale:.92}
+  50%{opacity:.94;scale:1.12}
+}
+.track::after{
+  content:"";
+  position:absolute;
+  left:-34px;top:-1px;bottom:-1px;
+  z-index:3;
+  width:58px;
+  background:linear-gradient(90deg,
+    transparent,
+    rgba(255,255,255,.98) 34%,
+    rgba(255,255,255,.84) 48%,
+    color-mix(in srgb,var(--glow) 82%,transparent) 66%,
+    transparent);
+  animation:sweep 3400ms linear infinite;
+  opacity:.88;
+  pointer-events:none;
+}
+@keyframes sweep{
+  0%{transform:translateX(0);opacity:0}
+  12%,88%{opacity:.94}
+  100%{transform:translateX(390px);opacity:0}
+}
+.gloss{
+  position:absolute;
+  inset:0 0 auto 0;
+  height:50%;
+  z-index:5;
+  background:linear-gradient(180deg,rgba(255,255,255,.42),rgba(255,255,255,0));
+  mix-blend-mode:soft-light;
+  pointer-events:none;
+}
+.fx{
+  position:absolute;
+  inset:0;
+  z-index:2;
+  width:100%;
+  height:28px;
+  pointer-events:none;
+}
+.meta{
+  margin-top:9px;
+  padding:0 2px;
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:16px;
+  min-height:18px;
+}
+.caption{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:11.5px;
+  line-height:18px;
+  font-weight:550;
+  color:#8290a4;
+}
+.percent{
+  flex:0 0 auto;
+  min-width:42px;
+  text-align:right;
+  font-size:12px;
+  line-height:18px;
+  font-weight:720;
+  color:#557cae;
+  font-variant-numeric:tabular-nums;
+  font-feature-settings:"tnum" 1;
+  white-space:nowrap;
+}
+
+@media(max-width:420px){
+  body{padding:12px}
+  .window{border-radius:16px}
+  .content{padding:18px 14px 16px}
+  .launch-option{padding:11px 12px}
+  .option-icon{width:38px;height:38px}
+  .option-title{font-size:13px}
+  .option-desc{font-size:10.5px}
+}
+@media(prefers-reduced-motion:reduce){
+  .launch-option,.chev,.fill,.head{transition:none!important}
+  .track::after,.head{animation:none!important}
+}
+</style>
+
+<style>
+/* ===== v11 startup layout refinement ===== */
+.content{
+  padding:18px;
+}
+
+.select-view{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+
+.launch-option{
+  position:relative;
+  min-width:0;
+  min-height:142px;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:0;
+  padding:14px;
+  border:1px solid rgba(118,140,178,.16);
+  border-radius:15px;
+  background:rgba(248,250,253,.78);
+  color:inherit;
+  font:inherit;
+  text-align:left;
+  cursor:pointer;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.86),
+    0 1px 2px rgba(56,76,112,.025);
+  transition:
+    transform .16s ease,
+    border-color .18s ease,
+    box-shadow .18s ease,
+    background .18s ease;
+}
+
+.launch-option:hover{
+  transform:translateY(-2px);
+  border-color:rgba(71,128,222,.26);
+  background:rgba(251,253,255,.98);
+  box-shadow:
+    0 9px 24px rgba(57,91,145,.09),
+    inset 0 1px 0 rgba(255,255,255,.94);
+}
+
+.launch-option:active{
+  transform:translateY(-1px);
+}
+
+.launch-option.primary{
+  background:
+    radial-gradient(120px 70px at 10% 0%,rgba(99,169,255,.13),transparent 68%),
+    rgba(248,251,255,.88);
+  border-color:rgba(77,137,227,.20);
+}
+
+.option-icon{
+  width:42px;
+  height:42px;
+  border-radius:13px;
+  margin-bottom:12px;
+}
+
+.option-icon svg{
+  width:21px;
+  height:21px;
+}
+
+.launch-option.primary .option-icon{
+  background:linear-gradient(145deg,#3679ec,#65b5ff);
+  box-shadow:
+    0 7px 18px rgba(57,125,240,.22),
+    inset 0 1px 0 rgba(255,255,255,.24);
+}
+
+.option-copy{
+  width:100%;
+  min-width:0;
+  display:block;
+}
+
+.option-top{
+  width:100%;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  padding-right:0;
+}
+
+.option-title{
+  font-size:13.5px;
+  line-height:1.25;
+  font-weight:735;
+  color:#21304a;
+}
+
+.badge{
+  margin-left:auto;
+  flex:0 0 auto;
+  padding:2px 6px 2.5px;
+  font-size:9px;
+  font-weight:700;
+  color:#527aa6;
+  background:rgba(90,154,235,.10);
+  border:1px solid rgba(90,154,235,.12);
+}
+
+.option-desc{
+  margin-top:6px;
+  min-height:30px;
+  white-space:normal;
+  overflow:visible;
+  text-overflow:clip;
+  font-size:10.5px;
+  line-height:1.45;
+  color:#8b97aa;
+}
+
+.option-end{
+  width:100%;
+  margin-top:auto;
+  padding-top:12px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  color:#9aa7bb;
+}
+
+.kbd{
+  min-width:24px;
+  height:20px;
+  padding:0 6px;
+  border-radius:6px;
+  font-size:9.5px;
+  color:#77869a;
+  background:rgba(233,238,246,.86);
+  border:1px solid rgba(125,145,180,.12);
+}
+
+.chev{
+  width:14px;
+  height:14px;
+}
+
+.launch-option:hover .chev{
+  transform:translateX(2px);
+  color:#5f83b0;
+}
+
+/* Hide obsolete blocks if any remain */
+.select-heading,
+.footer-hint{
+  display:none !important;
+}
+
+@media(max-width:380px){
+  .select-view{
+    grid-template-columns:1fr;
+  }
+
+  .launch-option{
+    min-height:104px;
+    display:grid;
+    grid-template-columns:42px minmax(0,1fr) auto;
+    grid-template-rows:auto auto;
+    column-gap:11px;
+    row-gap:3px;
+    align-items:center;
+  }
+
+  .option-icon{
+    grid-row:1 / span 2;
+    margin-bottom:0;
+  }
+
+  .option-copy{
+    grid-column:2;
+    grid-row:1 / span 2;
+  }
+
+  .option-end{
+    grid-column:3;
+    grid-row:1 / span 2;
+    width:auto;
+    margin-top:0;
+    padding-top:0;
+    gap:7px;
+  }
+
+  .badge{
+    margin-left:0;
+  }
+}
+</style>
+
+
+<style>
+/* ===== v12 ultra-compact startup cards ===== */
+.launch-option{
+  min-height:96px;
+  padding:14px;
+}
+
+.option-icon{
+  width:40px;
+  height:40px;
+  margin-bottom:10px;
+}
+
+.option-copy{
+  display:block;
+}
+
+.option-top{
+  gap:6px;
+}
+
+.option-title{
+  font-size:13.5px;
+  font-weight:740;
+}
+
+.option-end{
+  margin-top:auto;
+  padding-top:10px;
+  justify-content:flex-end;
+}
+
+.kbd,
+.option-desc{
+  display:none !important;
+}
+
+.chev{
+  width:13px;
+  height:13px;
+}
+
+@media(max-width:380px){
+  .launch-option{
+    min-height:78px;
+    grid-template-columns:40px minmax(0,1fr) auto;
+    padding:12px 13px;
+  }
+
+  .option-icon{
+    width:40px;
+    height:40px;
+  }
+
+  .option-end{
+    justify-content:flex-end;
+  }
+}
+</style>
+
+
+<style>
+/* ===== v13: startup view matches progress view footprint ===== */
+.content{
+  padding:26px 22px 22px;
+}
+
+/* same visual footprint as progress area */
+.select-view{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  min-height:55px;
+}
+
+.launch-option{
+  min-width:0;
+  min-height:55px;
+  height:55px;
+  padding:0 13px;
+  display:flex;
+  flex-direction:row;
+  align-items:center;
+  gap:10px;
+  border-radius:14px;
+}
+
+.option-icon{
+  width:30px;
+  height:30px;
+  flex:0 0 auto;
+  margin:0;
+  border-radius:9px;
+}
+
+.option-icon svg{
+  width:16px;
+  height:16px;
+}
+
+.option-copy{
+  flex:1 1 auto;
+  min-width:0;
+  width:auto;
+}
+
+.option-top{
+  display:flex;
+  align-items:center;
+  gap:5px;
+  width:100%;
+}
+
+.option-title{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:12.5px;
+  line-height:1;
+  font-weight:730;
+}
+
+.badge{
+  display:none !important;
+}
+
+.option-end{
+  flex:0 0 auto;
+  width:auto;
+  margin:0;
+  padding:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.chev{
+  width:12px;
+  height:12px;
+}
+
+.option-desc,
+.kbd{
+  display:none !important;
+}
+
+/* remove older mobile layout behavior */
+@media(max-width:380px){
+  .select-view{
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+  }
+
+  .launch-option{
+    min-height:52px;
+    height:52px;
+    padding:0 10px;
+    display:flex;
+    grid-template-columns:none;
+    grid-template-rows:none;
+  }
+
+  .option-icon{
+    width:28px;
+    height:28px;
+  }
+
+  .option-copy,
+  .option-end{
+    grid-column:auto;
+    grid-row:auto;
+  }
+
+  .option-title{
+    font-size:12px;
+  }
+}
+</style>
+
+<style>
+/* The desktop host fits the card; no surrounding demo backdrop. */
+html,body{margin:0;padding:0;min-height:100%;overflow:hidden;background:transparent}
+body{display:block}
+.window{width:100%;min-height:100vh;border-radius:10px;box-shadow:none;background:#f9fbfe}
+</style>
+</head>
+<body>
+
+<div class="window">
+  <div class="titlebar">
+    <div class="app-title">
+      <span class="logo">
+        <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+          <path d="M14.949 6.547a3.94 3.94 0 0 0-.348-3.273 4.11 4.11 0 0 0-4.4-1.934A4.1 4.1 0 0 0 8.423.2 4.15 4.15 0 0 0 6.305.086a4.1 4.1 0 0 0-1.891.948 4.04 4.04 0 0 0-1.158 1.753 4.1 4.1 0 0 0-1.563.679A4 4 0 0 0 .554 4.72a3.99 3.99 0 0 0 .502 4.731 3.94 3.94 0 0 0 .346 3.274 4.11 4.11 0 0 0 4.402 1.933c.382.425.852.764 1.377.995.526.231 1.095.35 1.67.346 1.78.002 3.358-1.132 3.901-2.804a4.1 4.1 0 0 0 1.563-.68 4 4 0 0 0 1.14-1.253 3.99 3.99 0 0 0-.506-4.716m-6.097 8.406a3.05 3.05 0 0 1-1.945-.694l.096-.054 3.23-1.838a.53.53 0 0 0 .265-.455v-4.49l1.366.778q.02.011.025.035v3.722c-.003 1.653-1.361 2.992-3.037 2.996m-6.53-2.75a2.95 2.95 0 0 1-.36-2.01l.095.057L5.29 12.09a.53.53 0 0 0 .527 0l3.949-2.246v1.555a.05.05 0 0 1-.022.041L6.473 13.3c-1.454.826-3.311.335-4.15-1.098m-.85-6.94A3.02 3.02 0 0 1 3.07 3.949v3.785a.51.51 0 0 0 .262.451l3.93 2.237-1.366.779a.05.05 0 0 1-.048 0L2.585 9.342a2.98 2.98 0 0 1-1.113-4.094zm11.216 2.571L8.747 5.576l1.362-.776a.05.05 0 0 1 .048 0l3.265 1.86a3 3 0 0 1 1.173 1.207 2.96 2.96 0 0 1-.27 3.2 3.05 3.05 0 0 1-1.36.997V8.279a.52.52 0 0 0-.276-.445m1.36-2.015-.097-.057-3.226-1.855a.53.53 0 0 0-.53 0L6.249 6.153V4.598a.04.04 0 0 1 .019-.04L9.533 2.7a3.07 3.07 0 0 1 3.257.139c.474.325.843.778 1.066 1.303.223.526.289 1.103.191 1.664zM5.503 8.575 4.139 7.8a.05.05 0 0 1-.026-.037V4.049c0-.57.166-1.127.476-1.607s.752-.864 1.275-1.105a3.08 3.08 0 0 1 3.234.41l-.096.054-3.23 1.838a.53.53 0 0 0-.265.455zm.742-1.577 1.758-1 1.762 1v2l-1.755 1-1.762-1z"/>
+        </svg>
+      </span>
+      MiMo 皮肤启动器
+    </div>
+    <div class="controls">
+      <button><svg viewBox="0 0 12 12"><path d="M2.5 6h7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></button>
+      <button><svg viewBox="0 0 12 12"><rect x="2.2" y="2.2" width="7.6" height="7.6" rx="1.4" fill="none" stroke="currentColor" stroke-width="1.1"/></svg></button>
+      <button class="close"><svg viewBox="0 0 12 12"><path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></button>
+    </div>
+  </div>
+
+  <main class="content">
+
+    <section class="select-view" id="selectView">
+<button class="launch-option primary" id="btnMiMo" style="width:100%">
+        <span class="option-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/>
+            <path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9z"/>
+          </svg>
+        </span>
+        <span class="option-copy">
+          <span class="option-top">
+            <span class="option-title">启动 MiMo 皮肤</span>
+            <span class="badge">推荐</span>
+          </span>
+        </span>
+        <span class="option-end">
+          <svg class="chev" viewBox="0 0 16 16" fill="none"><path d="M6 3.5L10.5 8 6 12.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+      </button>
+</section>
+
+    <section class="progress-view" id="progressView">
+      <div class="progress" id="progress">
+        <div class="portal">
+          <div class="track" id="track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+            <span class="fill" id="fill"></span>
+            <span class="head" id="head"></span>
+            <canvas class="fx" id="fx"></canvas>
+            <span class="gloss"></span>
+          </div>
+        </div>
+        <div class="meta">
+          <div class="caption" id="caption">加载皮肤资源…</div>
+          <div class="percent" id="percent">0%</div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+"use strict";
+
+const selectView = document.getElementById("selectView");
+const progressView = document.getElementById("progressView");
+
+const progress = document.getElementById("progress");
+const track = document.getElementById("track");
+const fill = document.getElementById("fill");
+const head = document.getElementById("head");
+const fx = document.getElementById("fx");
+const pctEl = document.getElementById("percent");
+const caption = document.getElementById("caption");
+const ctx = fx.getContext("2d",{alpha:true});
+
+const reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+let DPR = Math.min(window.devicePixelRatio || 1,1.5);
+let W=1,H=28;
+let visualRatio=0;
+let targetPct=0;
+let displayedPct=0;
+let particles=[];
+let sparks=[];
+let lastCanvas=performance.now();
+let lastBurstAt=0;
+let pctTimer=0;
+let paletteIndex=-1;
+let launched=false;
+
+/* particle sprite */
+const sprite=document.createElement("canvas");
+sprite.width=sprite.height=28;
+const sctx=sprite.getContext("2d");
+
+function paintSprite(rgbStr){
+  const [r,g,b]=rgbStr.split(" ").map(Number);
+  const c=14;
+  const grad=sctx.createRadialGradient(c,c,0,c,c,c);
+  grad.addColorStop(0,"rgba(255,255,255,1)");
+  grad.addColorStop(.18,"rgba(255,255,255,.98)");
+  grad.addColorStop(.40,"rgba("+r+","+g+","+b+",.92)");
+  grad.addColorStop(.66,"rgba("+r+","+g+","+b+",.46)");
+  grad.addColorStop(1,"rgba("+r+","+g+","+b+",0)");
+  sctx.clearRect(0,0,28,28);
+  sctx.fillStyle=grad;
+  sctx.beginPath();
+  sctx.arc(c,c,c,0,Math.PI*2);
+  sctx.fill();
+}
+paintSprite("64 132 232");
+
+function makeParticle(i){
+  const tier=i%3;
+  return{
+    tier,
+    dur:1500*(tier===0?1.35:tier===1?1.05:.84),
+    dx:52+Math.random()*Math.max(46,W-72),
+    dy:(Math.random()*2-1)*(tier===0?4.5:tier===1?7:10),
+    y0:H/2+(Math.random()*2-1)*3,
+    size:tier===0?1.7:tier===1?2.45:3.4,
+    tail:tier===0?11:tier===1?18:28,
+    t:Math.random()*1150,
+    delay:i*58
+  };
+}
+function rebuildParticles(){
+  particles=Array.from({length:22},(_,i)=>makeParticle(i));
+}
+function resize(){
+  const r=fx.getBoundingClientRect();
+  W=Math.max(1,r.width);
+  H=Math.max(1,r.height);
+  fx.width=Math.round(W*DPR);
+  fx.height=Math.round(H*DPR);
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  rebuildParticles();
+  head.style.transform="translate3d("+(visualRatio*W)+"px,0,0)";
+}
+window.addEventListener("resize",resize);
+
+function resetParticle(p){
+  Object.assign(p,makeParticle(Math.floor(Math.random()*22)),{t:0,delay:0});
+}
+function blit(x,y,size,alpha,tail){
+  if(alpha<=.02)return;
+  const s=size*3.2;
+  if(tail>2){
+    ctx.globalAlpha=alpha*.50;
+    ctx.drawImage(sprite,x-s/2-tail,y-s*.18,s+tail,s*.36);
+  }
+  ctx.globalAlpha=alpha;
+  ctx.drawImage(sprite,x-s/2,y-s/2,s,s);
+  if(size>2.7){
+    ctx.globalAlpha=alpha*.52;
+    ctx.fillStyle="#fff";
+    ctx.fillRect(x-tail*.34,y-.5,tail*.74,1);
+  }
+}
+function burst(x,strength=1){
+  if(reduced)return;
+  const layout=[
+    [-11,-7,1.9],[-5,-10,1.6],[7,-9,2.3],[13,-3,1.8],
+    [14,6,2.0],[6,10,1.7],[-8,8,2.0]
+  ];
+  layout.forEach(([dx,dy,size],i)=>{
+    sparks.push({
+      x,y:H/2,
+      vx:(dx*strength)/690,
+      vy:(dy*strength)/690,
+      size:size*strength,
+      t:-i*12,
+      life:560,
+      drag:.9975,
+      grav:.000011
+    });
+  });
+}
+
+const palettes=[
+  {max:20,c1:"#3977ef",c2:"#4e9df8",c3:"#78c7ff",glow:"#73c9ff",particle:"64 132 232"},
+  {max:40,c1:"#2d8ff0",c2:"#39b7ee",c3:"#68ddd7",glow:"#63e0e2",particle:"40 184 218"},
+  {max:60,c1:"#28a6dc",c2:"#6686f4",c3:"#9a75f7",glow:"#9b8cff",particle:"112 112 238"},
+  {max:80,c1:"#6d72ee",c2:"#9c66eb",c3:"#dd75d5",glow:"#da8cff",particle:"161 100 227"},
+  {max:101,c1:"#9267eb",c2:"#dc71d0",c3:"#73a7ff",glow:"#b68cff",particle:"190 104 224"}
+];
+
+function applyPaletteByProgress(p){
+  let idx=palettes.findIndex(item=>p<item.max);
+  if(idx<0)idx=palettes.length-1;
+  if(idx===paletteIndex)return;
+  paletteIndex=idx;
+  const palette=palettes[idx];
+  const root=document.documentElement.style;
+  root.setProperty("--c1",palette.c1);
+  root.setProperty("--c2",palette.c2);
+  root.setProperty("--c3",palette.c3);
+  root.setProperty("--glow",palette.glow);
+  paintSprite(palette.particle);
+  if(!reduced && visualRatio>0){
+    burst(Math.max(12,Math.min(W-10,visualRatio*W)),1.12);
+  }
+}
+
+function drawCanvas(now){
+  if(!launched || document.hidden){
+    requestAnimationFrame(drawCanvas);
+    return;
+  }
+
+  const elapsed=now-lastCanvas;
+  if(elapsed<15){
+    requestAnimationFrame(drawCanvas);
+    return;
+  }
+  const dt=Math.min(elapsed,50);
+  lastCanvas=now;
+
+  ctx.clearRect(0,0,W,H);
+  ctx.globalCompositeOperation="lighter";
+
+  for(const p of particles){
+    if(p.delay>0){p.delay-=dt;continue}
+    p.t+=dt;
+    if(p.t>=p.dur)resetParticle(p);
+    const k=p.t/p.dur;
+    const px=8+p.dx*k;
+    const py=p.y0+p.dy*k;
+    let alpha=k<.14?(k/.14)*.90:.90-(k-.14)*(.90/.86);
+    alpha*=px<visualRatio*W?1:.40;
+    blit(px,py,p.size,Math.max(0,alpha),p.tail*(.52+k));
+  }
+
+  for(let i=sparks.length-1;i>=0;i--){
+    const s=sparks[i];
+    s.t+=dt;
+    if(s.t<0)continue;
+    if(s.t>=s.life){sparks.splice(i,1);continue}
+    s.vy+=s.grav*dt;
+    s.vx*=Math.pow(s.drag,dt/16);
+    s.vy*=Math.pow(s.drag,dt/16);
+    s.x+=s.vx*dt;
+    s.y+=s.vy*dt;
+    const k=s.t/s.life;
+    blit(s.x,s.y,s.size*(1-k*.35),(1-k)*.78,5);
+  }
+
+  if(!reduced && visualRatio>.04 && visualRatio<.995 && now-lastBurstAt>680){
+    lastBurstAt=now;
+    burst(Math.max(12,Math.min(W-10,visualRatio*W)),.86);
+  }
+
+  ctx.globalAlpha=1;
+  ctx.globalCompositeOperation="source-over";
+  requestAnimationFrame(drawCanvas);
+}
+requestAnimationFrame(drawCanvas);
+
+const skinStages=[
+  {at:0,text:"加载皮肤资源…"},
+  {at:18,text:"读取主题配置…"},
+  {at:38,text:"应用界面样式…"},
+  {at:60,text:"初始化渲染层…"},
+  {at:78,text:"连接 Codex…"},
+  {at:92,text:"完成启动准备…"},
+  {at:100,text:"启动完成"}
+];
+const mimoStages=[
+  {at:0,text:"加载皮肤资源…"},
+  {at:18,text:"读取主题配置…"},
+  {at:38,text:"应用界面样式…"},
+  {at:60,text:"初始化渲染层…"},
+  {at:78,text:"连接 MiMo…"},
+  {at:92,text:"完成启动准备…"},
+  {at:100,text:"启动完成"}
+];
+let stages=skinStages;
+
+function updateStage(p){
+  let idx=0;
+  for(let i=0;i<stages.length;i++){
+    if(p>=stages[i].at)idx=i;else break;
+  }
+  const next=stages[idx].text;
+  if(caption.textContent!==next)caption.textContent=next;
+}
+
+function startPercentTicker(){
+  if(pctTimer)return;
+  pctTimer=setInterval(()=>{
+    if(displayedPct===targetPct){
+      if(displayedPct>=100){
+        clearInterval(pctTimer);
+        pctTimer=0;
+      }
+      return;
+    }
+    const diff=targetPct-displayedPct;
+    const step=Math.max(1,Math.ceil(Math.abs(diff)*.20));
+    displayedPct+=Math.sign(diff)*Math.min(Math.abs(diff),step);
+    pctEl.textContent=displayedPct+"%";
+    // The host owns stage text; percentage smoothing must not overwrite it.
+  },55);
+}
+
+function setProgress(value,text){
+  const p=Math.max(0,Math.min(100,Math.round(Number(value)||0)));
+  targetPct=p;
+  visualRatio=p/100;
+  applyPaletteByProgress(p);
+
+  fill.style.transform="scaleX("+visualRatio+")";
+  head.style.transform="translate3d("+(visualRatio*W)+"px,0,0)";
+  head.classList.toggle("on",visualRatio>.01 && visualRatio<.999);
+  track.setAttribute("aria-valuenow",String(p));
+
+  if(text)caption.textContent=text;
+
+  if(!reduced && p>0 && p<100){
+    burst(Math.max(12,Math.min(W-10,visualRatio*W)),.95);
+  }
+  startPercentTicker();
+}
+
+function beginLaunch(mode){
+  if(launched)return;
+  launched=true;
+
+  selectView.classList.add("off");
+  progressView.classList.add("on");
+
+  stages=mode==="MiMo"?mimoStages:skinStages;
+
+  displayedPct=0;
+  targetPct=0;
+  visualRatio=0;
+  paletteIndex=-1;
+  pctEl.textContent="0%";
+  fill.style.transform="scaleX(0)";
+  head.style.transform="translate3d(0,0,0)";
+  head.classList.remove("on");
+  updateStage(0);
+
+  requestAnimationFrame(()=>{
+    resize();
+    applyPaletteByProgress(0);
+  });
+
+  if(window.chrome?.webview) window.chrome.webview.postMessage(mode);
+
+}
+
+document.getElementById("btnMiMo").addEventListener("click",()=>beginLaunch("MiMo"));
+
+window.addEventListener("keydown",e=>{
+  if(launched)return;
+  if(e.key==="m"||e.key==="M"||e.key==="Enter"||e.key===" ")beginLaunch("MiMo");
+});
+
+window.LauncherUI={
+  beginLaunch,
+  setProgress,
+  setCaption(text){caption.textContent=text}
+};
+</script>
+<script>
+const host=window.chrome?.webview;
+document.querySelectorAll('.controls button').forEach((button,i)=>{
+ button.setAttribute('aria-label',['最小化','调整窗口大小','关闭'][i]);
+ button.addEventListener('click',()=>host?.postMessage(['minimize','resize','close'][i]));
+});
+document.querySelector('.titlebar').addEventListener('mousedown',e=>{
+ if(e.button===0&&!e.target.closest('button'))host?.postMessage('drag');
+});
+window.addEventListener('keydown',e=>{if(e.key==='Escape'&&!launched)host?.postMessage('close');});
+window.LauncherUI.fail=text=>{caption.textContent=text;pctEl.textContent='失败';head.classList.remove('on');};
+</script></body>
+</html>

@@ -1,0 +1,38 @@
+{
+  "id": "recommended-model",
+  "name": "推荐模型",
+  "runtimeEntry": "windows/assets/renderer-inject.js",
+  "functions": [
+    "readModelRadarPayload",
+    "refreshModelRadar",
+    "ensureModelRadar",
+    "updateModelRadarView",
+    "tryNativeModelSelection"
+  ],
+  "domIds": [
+    "codex-model-radar-pill",
+    "codex-model-radar-popover"
+  ],
+  "storageKeys": [
+    "codex-dream-model-radar",
+    "codex-dream-model-radar-selection"
+  ],
+  "configKeys": [
+    "quota.radar.modelRefreshMs"
+  ],
+  "publicSources": [
+    "https://codexradar.com/api/intelligence-efficiency",
+    "https://codexradar.com/data/intelligence-efficiency.json"
+  ],
+  "safeToCustomize": [
+    "排序阈值",
+    "推荐文案",
+    "卡片颜色和图标",
+    "刷新间隔"
+  ],
+  "mustPreserve": [
+    "公开 GET 失败时使用可信缓存，无缓存时显示不可用",
+    "原生模型选择按钮和键盘焦点",
+    "不把推荐模型误认为当前真实用量"
+  ]
+}
