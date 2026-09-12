@@ -1,4 +1,4 @@
-﻿{
+{
   "schema": "mimo-dream-skin-theme/1",
   "id": "sakura-coast",
   "label": "樱花海岸",
@@ -25,7 +25,7 @@
   "glass": {
     "panel": 0.18,
     "sidebar": 0.14,
-    "main": 0.10,
+    "main": 0.1,
     "composer": 0.68,
     "blur": 4
   }

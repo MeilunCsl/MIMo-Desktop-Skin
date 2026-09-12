@@ -100,6 +100,14 @@ function Write-Log {
   } catch { }
 }
 
+# Machine-readable stage for the desktop launcher progress UI.
+function Write-ProgressMark {
+  param([int]$Percent, [string]$Message = '')
+  $Percent = [Math]::Max(0, [Math]::Min(100, $Percent))
+  $msg = if ($Message) { $Message } else { 'working' }
+  Write-Host ("PROGRESS {0} {1}" -f $Percent, $msg)
+}
+
 function New-MiMoSkinShortcut {
   param([string]$Executable, [int]$Port)
 
@@ -442,14 +450,17 @@ if ($Revert) {
 $running = Get-MiMoProcess
 $needLaunch = $false
 
+Write-ProgressMark 8 'locating MiMo process'
 if ($running.Count -eq 0) {
   $needLaunch = $true
 }
 elseif (Test-CdpReady -Port $Port) {
   Write-Log "检测到运行中的 MiMo 已带 CDP 端口 $Port，直接复用。"
+  Write-ProgressMark 35 'reusing running CDP'
 }
 else {
   Write-Log "MiMo 正在运行（$($running.Count) 个进程），但未开启 CDP 端口。"
+  Write-ProgressMark 12 'restarting MiMo without CDP'
   $authorized = [bool]$RestartExisting
   if (-not $authorized -and $PromptRestart) {
     $answer = Read-Host '需要重启 MiMo 一次才能换肤，未保存的输入可能丢失。现在重启？(y/N)'
@@ -492,25 +503,30 @@ if ($needLaunch) {
     '--remote-debugging-address=127.0.0.1',
     "--remote-debugging-port=$Port"
   )
+  Write-ProgressMark 18 'launching MiMo'
   Write-Log "启动（-Launch 显式指定）：$($install.Executable) $($launchArgs -join ' ')"
   $mimoPid = Start-MiMoDetached -Executable $install.Executable -Arguments $launchArgs
   Write-Log "已通过 WMI 创建 MiMo（PID $mimoPid）。父进程应为 WmiPrvSE.exe。"
+  Write-ProgressMark 28 'waiting for CDP endpoint'
 
   if (-not (Wait-Cdp -Port $Port -TimeoutSeconds 60)) {
     Write-Log "60 秒内未出现 CDP 端点。可能原因：客户端版本变更、安全软件拦截、或启动参数被忽略。" 'ERROR'
     exit 1
   }
   Write-Log 'CDP 端点已就绪。'
+  Write-ProgressMark 40 'CDP endpoint ready'
 }
 
 if ($NoInject) {
   Write-Log '按 -NoInject 要求，跳过注入。'
 }
 else {
+  Write-ProgressMark 48 'waiting for renderer'
   if (-not (Wait-MiMoRenderer -Port $Port -TimeoutSeconds 45)) {
     Write-Log '45 秒内未找到渲染层 target，仍尝试注入。' 'WARN'
   } else {
     Write-Log '渲染层 target 已就绪。'
+    Write-ProgressMark 55 'renderer ready'
   }
   $extra = @()
   if ($Theme)        { $extra += @('--theme', $Theme) }
@@ -521,6 +537,7 @@ else {
   # 刚启动时渲染层可能晚半拍注册；退出码 3 时重试几次。
   $injectOk = $false
   foreach ($attempt in 1..5) {
+    Write-ProgressMark (55 + [int](8 * ($attempt - 1))) "inject attempt $attempt"
     Invoke-Injector -Extra $extra -Tolerate
     if ($script:LastInjectorExit -eq 0) { $injectOk = $true; break }
     if ($script:LastInjectorExit -eq 3) {
@@ -532,6 +549,7 @@ else {
   }
   if (-not $injectOk) { throw "注入器退出码 $($script:LastInjectorExit)" }
   Write-Log '皮肤注入完成。'
+  Write-ProgressMark 96 'skin injected'
 }
 
 $state = [pscustomobject]@{

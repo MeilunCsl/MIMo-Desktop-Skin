@@ -10,13 +10,13 @@
 
 ## 效果预览
 
-产品站（中英双语 + 启动器进度示意）：浏览器打开 [`site/index.html`](./site/index.html)。
+产品站（中英双语）：浏览器打开 [`site/index.html`](./site/index.html)。
 
-樱花海岸皮肤 · **新建任务** 视图（项目已收起）：
+樱花海岸 · **新建任务** 视图（项目已收起）：
 
 ![MiMo 主页 — 新建任务](./docs/images/mimo-home.png)
 
-启动器进度（预估启动 → 就绪）：
+启动器界面示意（本机运行时百分比来自真实阶段）：
 
 ![启动器进度](./docs/images/mimo-launch-progress.gif)
 
@@ -35,9 +35,8 @@ cd MIMo-Desktop-Skin
 # 安装桌面/开始菜单快捷方式（一次）
 powershell -NoProfile -ExecutionPolicy Bypass -File .\mimo\scripts\install-launch-shortcuts.ps1
 
-# 双击桌面「MiMo 皮肤」
-# 或命令行直接启动（会确保快捷方式存在，并提示用快捷方式拉起 MiMo）
-powershell -NoProfile -ExecutionPolicy RemoteSigned -File .\Start-MiMo.ps1
+# 打开启动器窗口（进度条按真实阶段推进）
+powershell -NoProfile -STA -ExecutionPolicy Bypass -File .\Start-MiMo.ps1
 ```
 
 常用命令：
@@ -47,6 +46,7 @@ powershell -NoProfile -ExecutionPolicy RemoteSigned -File .\Start-MiMo.ps1 -List
 powershell -NoProfile -ExecutionPolicy RemoteSigned -File .\Start-MiMo.ps1 -Diagnose
 powershell -NoProfile -ExecutionPolicy RemoteSigned -File .\Start-MiMo.ps1 -Revert
 powershell -NoProfile -ExecutionPolicy RemoteSigned -File .\Start-MiMo.ps1 -Verify
+powershell -NoProfile -ExecutionPolicy RemoteSigned -File .\Start-MiMo.ps1 -NoLauncher -Theme sakura-coast
 
 # 注入器（MiMo 已带调试端口时）
 node .\mimo\scripts\inject-skin.mjs --list
@@ -56,46 +56,68 @@ node .\mimo\scripts\inject-skin.mjs --revert
 
 ## 皮肤
 
-当前内置**一套**主题：
+内置一套主题：**`sakura-coast`（樱花海岸）**。
 
-| id | 名称 |
-|---|---|
-| `sakura-coast` | 樱花海岸 |
+换插画：替换 `mimo/assets/sakura-coast.webp`，或改 `mimo/assets/themes/sakura-coast.json` 的 `image` / `colors` / `glass`。
 
-要换插画：替换 `mimo/assets/sakura-coast.webp`，或改 `mimo/assets/themes/sakura-coast.json` 里的 `image` / `colors` / `glass`。
+## 启动器进度（真实阶段）
+
+桌面启动器**不是**按时间假动画。工作进程会输出机器可读标记：
+
+```text
+PROGRESS <0-100> <阶段>
+```
+
+| 阶段 | 百分比 | 来源 |
+|---|---|---|
+| 定位 MiMo 进程 | 8% | `Start-MiMo-Skin.ps1` |
+| 启动 / 重启 MiMo | 18% | `Start-MiMo-Skin.ps1` |
+| 等待 CDP 端点 | 28–40% | `Start-MiMo-Skin.ps1` |
+| 渲染层就绪 | 55% | `Start-MiMo-Skin.ps1` |
+| 连接 CDP / 附着 | 60–65% | `inject-skin.mjs` |
+| 合成主题 CSS | 72–84% | `inject-skin.mjs` |
+| 注入样式表 | 91% | `inject-skin.mjs` |
+| 应用运行时 | 94% | `inject-skin.mjs` |
+| **成功（校验通过）** | **100%** | 工作进程退出码 0 |
+
+`Launcher.cs` 解析这些行并更新界面。100% 只在注入成功后出现。
 
 ## 为什么必须用快捷方式启动
 
 MiMo 是单实例 Electron。由终端启动时，关掉控制台可能带走子进程。  
-快捷方式由资源管理器启动，父进程是 `explorer.exe`，与终端无关。
-
-MiMo 已在运行时再双击会命中单实例锁并闪退——先从托盘完全退出，再启动。
+快捷方式由资源管理器启动（父进程 `explorer.exe`）。若 MiMo 已在托盘运行，请先完全退出。
 
 ## 「重置信号」是什么
 
-顶栏/输入区旁的信号**只读取 X（Twitter）公开时间线**（`https://x.com/thsottiaux`）上与额度重置相关的公开动态，本地分类后展示。
+输入区旁的信号**只读取 X 公开时间线**（`https://x.com/thsottiaux`）上与额度重置相关的动态，本地分类后展示。
 
 - 不是官方通知
 - 不读取 Cookie / Token / 账户凭据
-- 网络失败时显示为空，不影响换肤
+- 网络失败时为空，不影响换肤
 
-实现见 `mimo/scripts/tibo-radar.mjs`。
+见 `mimo/scripts/tibo-radar.mjs`。
 
 ## 结构
 
 ```text
-Start-MiMo.ps1                      # 根入口
-mimo/Start-MiMo-Skin.ps1            # 定位 exe、快捷方式、CDP、调注入器
-mimo/scripts/inject-skin.mjs        # CDP 注入 + 运行时
+Start-MiMo.ps1                      # 根入口（默认打开启动器）
+Start-Codex.ps1                     # WebView2 进度启动器宿主
+mimo/Start-MiMo-Skin.ps1            # 定位 exe、快捷方式、CDP、注入
+mimo/scripts/inject-skin.mjs        # CDP 注入 + 运行时（输出 PROGRESS）
 mimo/scripts/theme-css.mjs          # 语义色 → MiMo token
 mimo/scripts/tibo-radar.mjs         # X 公开动态（可选信号）
 mimo/scripts/install-launch-shortcuts.ps1
 mimo/assets/themes/sakura-coast.json
 mimo/assets/sakura-coast.webp
 mimo/assets/side-avatar.webp
-mimo/selectors.json                 # 选择器契约
-logo/mimo.ico                       # 快捷方式兜底图标（优先用已安装的 MiMo 应用图标）
+mimo/selectors.json
+windows/launcher/                   # 可选 WebView2 宿主（SDK DLL 不进仓库）
+docs/images/                        # README 截图 / GIF
+site/                               # 中英产品站
+logo/mimo.ico
 ```
+
+> 动画启动器需要 `windows/launcher/lib/` 下的 WebView2 SDK 程序集（本仓库不发布）。没有它们时启动器走非 WebView 路径。
 
 ## 安全
 

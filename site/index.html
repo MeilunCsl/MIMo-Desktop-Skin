@@ -325,6 +325,40 @@
       margin: 0 0 6px;
       font-size: 1.25rem;
     }
+    .stage-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 8px;
+    }
+    .stage-list li {
+      display: grid;
+      grid-template-columns: 52px 1fr;
+      gap: 12px;
+      align-items: center;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.55);
+      border: 1px solid var(--line);
+      font-size: 14px;
+    }
+    .stage-list li span {
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent);
+      font-variant-numeric: tabular-nums;
+    }
+    .stage-list li em {
+      font-style: normal;
+      color: #3d6288;
+    }
+    .stage-list li.done {
+      border-color: rgba(62, 143, 122, 0.45);
+      background: rgba(62, 143, 122, 0.08);
+    }
+    .stage-list li.done span { color: var(--ok); }
     .launcher-shell .status {
       color: var(--muted);
       font-size: 14px;
@@ -601,31 +635,28 @@
 
       <div class="launcher-demo" id="launcher">
         <div class="launcher-shell" aria-live="polite">
-          <div class="eyebrow" style="margin-bottom:12px"><i></i><span data-i18n-zh>启动器进度</span><span data-i18n-en>Launcher progress</span></div>
+          <div class="eyebrow" style="margin-bottom:12px"><i></i><span data-i18n-zh>真实启动阶段</span><span data-i18n-en>Real launch stages</span></div>
           <h3>MiMo Dream Skin</h3>
-          <div class="status" id="launchStatus">
-            <span data-i18n-zh>准备启动…</span><span data-i18n-en>Preparing…</span>
-          </div>
-          <div class="bar-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="launchBar">
-            <div class="bar-fill" id="launchFill"></div>
-          </div>
-          <div class="bar-meta">
-            <span>
-              <span class="pulse" aria-hidden="true"></span>
-              <span data-i18n-zh>预估启动 · 等待就绪</span><span data-i18n-en>Estimated start · waiting</span>
-            </span>
-            <strong id="launchPct">0%</strong>
-          </div>
-          <p class="note">
-            <span data-i18n-zh>网页为示意动画。桌面启动器使用同款进度语义：预估封顶 94%，工作进程成功后到 100%。</span>
-            <span data-i18n-en>Web demo mirrors the desktop launcher: estimate caps at 94%, worker success sets 100%.</span>
+          <p class="note" style="margin:0 0 18px">
+            <span data-i18n-zh>桌面启动器读取工作进程输出的 <code>PROGRESS n stage</code> 推进进度，不是时间假动画。注入校验通过后才到 100%。</span>
+            <span data-i18n-en>The desktop launcher reads real <code>PROGRESS n stage</code> lines from the worker — not a timed fake. 100% only after a successful inject.</span>
           </p>
+          <ol class="stage-list">
+            <li><span>8%</span><em data-i18n-zh>定位 MiMo 进程</em><em data-i18n-en>Locate MiMo process</em></li>
+            <li><span>18%</span><em data-i18n-zh>启动 / 重启 MiMo</em><em data-i18n-en>Launch / restart MiMo</em></li>
+            <li><span>40%</span><em data-i18n-zh>等待 CDP 端点</em><em data-i18n-en>Wait for CDP endpoint</em></li>
+            <li><span>55%</span><em data-i18n-zh>渲染层就绪</em><em data-i18n-en>Renderer ready</em></li>
+            <li><span>72%</span><em data-i18n-zh>合成主题 CSS</em><em data-i18n-en>Compose theme CSS</em></li>
+            <li><span>91%</span><em data-i18n-zh>注入样式表</em><em data-i18n-en>Inject stylesheet</em></li>
+            <li><span>94%</span><em data-i18n-zh>应用运行时</em><em data-i18n-en>Apply runtime</em></li>
+            <li class="done"><span>100%</span><em data-i18n-zh>注入完成（校验通过）</em><em data-i18n-en>Injected (verified)</em></li>
+          </ol>
         </div>
         <figure class="launcher-gif">
           <img src="./assets/mimo-launch-progress.gif" alt="Launcher progress animation" />
           <figcaption>
-            <span data-i18n-zh>启动器进度条动图 · 就绪后拉起 MiMo</span>
-            <span data-i18n-en>Launcher progress GIF · then starts MiMo</span>
+            <span data-i18n-zh>启动器界面示意 · 本机运行时百分比来自真实阶段</span>
+            <span data-i18n-en>Launcher UI sample · local percentages come from real stages</span>
           </figcaption>
         </figure>
       </div>
@@ -842,56 +873,8 @@ site/                          # 本产品站</pre>
         }
       }
 
-      // launcher progress loop (estimate → 94 → 100)
-      const fill = document.getElementById("launchFill");
-      const pct = document.getElementById("launchPct");
-      const status = document.getElementById("launchStatus");
-      const bar = document.getElementById("launchBar");
-      const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-      const texts = {
-        zh: ["准备启动…", "正在启动 · 等待就绪", "注入 sakura-coast…", "启动完成"],
-        en: ["Preparing…", "Starting · waiting for ready", "Applying sakura-coast…", "Ready"],
-      };
-      function label(i) {
-        const lang = root.lang.startsWith("en") ? "en" : "zh";
-        return texts[lang][i];
-      }
-      function setP(p, msgIdx) {
-        fill.style.width = p + "%";
-        pct.textContent = Math.round(p) + "%";
-        bar.setAttribute("aria-valuenow", String(Math.round(p)));
-        status.textContent = label(msgIdx);
-      }
-      function runLaunch() {
-        if (reduce) { setP(100, 3); return; }
-        const t0 = performance.now();
-        const dur = 3200;
-        function frame(now) {
-          const t = Math.min(1, (now - t0) / dur);
-          // ease-out to 94, then step to 100
-          let p;
-          if (t < 0.82) {
-            p = 8 + 86 * (1 - Math.pow(1 - t / 0.82, 3)) * 0.92;
-            p = Math.min(94, p);
-            setP(p, t < 0.35 ? 0 : 1);
-          } else if (t < 1) {
-            const u = (t - 0.82) / 0.18;
-            setP(94 + 6 * u, 2);
-          } else {
-            setP(100, 3);
-            setTimeout(() => { t0reset(); }, 1600);
-            return;
-          }
-          requestAnimationFrame(frame);
-        }
-        requestAnimationFrame(frame);
-      }
-      function t0reset() {
-        setP(0, 0);
-        setTimeout(runLaunch, 500);
-      }
-      setP(0, 0);
-      setTimeout(runLaunch, 600);
+      // Desktop launcher progress is driven by real PROGRESS marks.
+      // This page documents the stages; it does not fake a looping bar.
 
       // copy buttons
       document.querySelectorAll(".copy-btn[data-copy]").forEach((btn) => {

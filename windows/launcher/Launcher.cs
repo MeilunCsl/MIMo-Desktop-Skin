@@ -16,6 +16,8 @@ public sealed class DreamLauncher : Form {
   Stopwatch elapsed = new Stopwatch();
   bool busy, finished, ticking;
   int capture;
+  int lastProgressPct = 5;
+  string lastProgressMsg = "starting";
   string output = "";
   [DllImport("user32.dll")] static extern bool ReleaseCapture();
   [DllImport("user32.dll")] static extern IntPtr SendMessage(IntPtr h, int m, IntPtr w, IntPtr l);
@@ -84,8 +86,8 @@ public sealed class DreamLauncher : Form {
         UseShellExecute=false,CreateNoWindow=true,RedirectStandardOutput=true,RedirectStandardError=true,WorkingDirectory=root
       };
       worker=new Process {StartInfo=info};
-      worker.OutputDataReceived+=(s,e)=>{if(e.Data!=null)lock(elapsed){output+=e.Data+"\n";}};
-      worker.ErrorDataReceived+=(s,e)=>{if(e.Data!=null)lock(elapsed){output+=e.Data+"\n";}};
+      worker.OutputDataReceived+=(s,e)=>{if(e.Data!=null)lock(elapsed){output+=e.Data+"\n";ParseProgressLine(e.Data);}};
+      worker.ErrorDataReceived+=(s,e)=>{if(e.Data!=null)lock(elapsed){output+=e.Data+"\n";ParseProgressLine(e.Data);}};
       try {worker.Start();worker.BeginOutputReadLine();worker.BeginErrorReadLine();}
       catch(Exception e){finished=true;web.ExecuteScriptAsync("LauncherUI.fail("+Json(e.Message)+")");}
     }
@@ -112,6 +114,17 @@ public sealed class DreamLauncher : Form {
     catch(InvalidOperationException) { if(!IsDisposed)throw; }
     finally { ticking=false; }
   }
+  void ParseProgressLine(string line) {
+    if(String.IsNullOrEmpty(line))return;
+    // Expected: PROGRESS <0-100> <message...>
+    if(!line.StartsWith("PROGRESS ",StringComparison.Ordinal))return;
+    var parts=line.Substring(9).Trim().Split(new[]{' '},2);
+    int pct;
+    if(parts.Length==0||!int.TryParse(parts[0],out pct))return;
+    if(pct<0)pct=0; if(pct>100)pct=100;
+    lastProgressPct=pct;
+    if(parts.Length>1&&!String.IsNullOrWhiteSpace(parts[1]))lastProgressMsg=parts[1].Trim();
+  }
   async Task UpdateProgress() {
     double seconds=elapsed.Elapsed.TotalSeconds;
     bool done=worker!=null?worker.HasExited:seconds>=8;
@@ -133,9 +146,14 @@ public sealed class DreamLauncher : Form {
       }
       timer.Stop();return;
     }
-    // Estimated waiting progress, capped until the actual worker succeeds.
-    int pct=(int)Math.Min(94,8+86*(1-Math.Exp(-seconds/6)));
-    await web.ExecuteScriptAsync("LauncherUI.setProgress("+pct+",'正在启动 · 等待就绪')");
+    // Real progress from PROGRESS marks emitted by Start-MiMo-Skin / inject-skin.
+    // Only nudge upward while waiting if a stage has not reported yet.
+    int pct=lastProgressPct;
+    if(pct<8) pct=(int)Math.Min(8,5+seconds);
+    if(pct>94) pct=94; // 100% is reserved for verified success
+    string msg=lastProgressMsg;
+    if(msg=="starting"||String.IsNullOrEmpty(msg)) msg="正在启动 · 等待就绪";
+    await web.ExecuteScriptAsync("LauncherUI.setProgress("+pct+","+Json(msg)+")");
     if(!String.IsNullOrEmpty(preview)&&seconds>1+capture&&capture<3) {
       capture++;await Snapshot("motion-"+capture+".png");
       string metrics=await web.ExecuteScriptAsync("JSON.stringify({percent:document.getElementById('percent').textContent,animations:document.getAnimations().map(a=>({time:a.currentTime,state:a.playState})),canvas:document.getElementById('fx').toDataURL()})");

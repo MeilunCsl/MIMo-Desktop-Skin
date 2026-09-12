@@ -978,8 +978,15 @@ const RUNTIME_SRC = `(() => {
 
 /* ----------------------------------------------------------------- main ---- */
 
+// Machine-readable stage for the desktop launcher progress UI.
+function progress(percent, message) {
+  const p = Math.max(0, Math.min(100, Math.round(percent)));
+  console.log(`PROGRESS ${p} ${message || 'working'}`);
+}
+
 let targets;
 try {
+  progress(60, 'connecting CDP');
   targets = await listTargets(args.port);
 } catch (err) {
   console.error(`Cannot connect to CDP 127.0.0.1:${args.port}: ${err.message}`);
@@ -996,6 +1003,7 @@ if (!target) {
 
 const conn = new Cdp(target.webSocketDebuggerUrl);
 await conn.connect();
+progress(65, 'renderer attached');
 
 async function waitRendererReady(c, timeoutMs = 45000) {
   const deadline = Date.now() + timeoutMs;
@@ -1035,9 +1043,11 @@ try {
   }
 
   const built = await buildCss();
+  progress(72, 'building theme');
 
   // Public Tibo feed (Node-side fetch; failure does not block inject)
   console.log('  Fetching Tibo feed...');
+  progress(76, 'reading public X feed');
   const tiboStateForRuntime = await refreshTiboRadar();
   console.log(`  Tibo: ${compactSignalText(tiboStateForRuntime)}  ${tiboStateForRuntime.reason || ''}`.slice(0, 160));
 
@@ -1066,6 +1076,7 @@ try {
       }
     }
     css = composeThemeCss(built.theme, bgVar);
+    progress(84, 'composing CSS');
     if (built.theme) {
       console.log(`  Theme ${built.theme.id} (${built.theme.label})  bg: ${bgNote}`);
     }
@@ -1074,6 +1085,7 @@ try {
   }
 
   if (args.wait) {
+    progress(88, 'waiting for app shell');
     const ready = await waitRendererReady(conn);
     console.log(ready && ready.theme
       ? `  Renderer ready (readyState=${ready.readyState}, #app=${ready.hasApp}, theme=${ready.theme})`
@@ -1082,6 +1094,7 @@ try {
 
   const hasBg = !built.css && (built.bgSpec ? true : false);
 
+  progress(91, 'injecting stylesheet');
   const payload = await conn.eval(`(() => {
     const doc = document, html = doc.documentElement;
     let el = doc.getElementById(${JSON.stringify(STYLE_ID)});
@@ -1095,12 +1108,14 @@ try {
     return { created, cssBytes: el.textContent.length };
   })()`);
 
+  progress(94, 'applying runtime');
   const st = await conn.eval(
     RUNTIME_SRC
       .replace('__TIBO_STATE__', JSON.stringify(tiboStateForRuntime))
       .replace('__MUSE_AVATAR__', museAvatarDataUrl)
   );
   const ok = st && st.stylePresent;
+  if (ok) progress(100, 'injected');
 
   console.log(`Injected  style ${payload.cssBytes} bytes  ${payload.created ? '(created)' : '(updated)'}`);
   console.log(`  Background art: ${hasBg ? 'on' : 'off'}`);
