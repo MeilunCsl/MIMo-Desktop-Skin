@@ -14,13 +14,9 @@ Sakura Coast skin on a clean **New Task** view (projects collapsed):
 
 ![MiMo home — new task](./docs/images/mimo-home.png)
 
-Composer progress bar (remaining quota ring · today amount · public X reset signal):
+Launcher progress (estimate → ready):
 
-![Progress bar](./docs/images/mimo-progress-bar.png)
-
-Header quota pill:
-
-![Quota pill](./docs/images/mimo-quota-pill.png)
+![Launcher progress](./docs/images/mimo-launch-progress.gif)
 
 ## Requirements
 
@@ -92,6 +88,7 @@ mimo/scripts/inject-skin.mjs        # CDP inject + runtime
 mimo/scripts/theme-css.mjs          # semantic colors → MiMo tokens
 mimo/scripts/tibo-radar.mjs         # public X feed (optional signal)
 mimo/scripts/install-launch-shortcuts.ps1
+mimo/scripts/capture-shots.mjs      # optional: recapture home screenshot via CDP
 mimo/assets/themes/sakura-coast.json
 mimo/assets/sakura-coast.webp
 mimo/assets/side-avatar.webp

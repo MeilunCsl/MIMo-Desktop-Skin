@@ -14,13 +14,9 @@
 
 ![MiMo 主页 — 新建任务](./docs/images/mimo-home.png)
 
-输入区进度条（剩余额度环 · 今日累计 · X 公开重置信号）：
+启动器进度（预估启动 → 就绪）：
 
-![进度条](./docs/images/mimo-progress-bar.png)
-
-顶栏额度胶囊：
-
-![额度胶囊](./docs/images/mimo-quota-pill.png)
+![启动器进度](./docs/images/mimo-launch-progress.gif)
 
 ## 环境
 
