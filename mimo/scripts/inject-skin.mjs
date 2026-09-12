@@ -8,8 +8,8 @@
  * Usage
  *   node inject-skin.mjs --list
  *   node inject-skin.mjs --theme sakura-coast
- *   node inject-skin.mjs --theme garden --accent '#2f6b53'
- *   node inject-skin.mjs --theme sakura-coast --no-bg
+ *   node inject-skin.mjs --accent '#2f6b53'
+ *   node inject-skin.mjs --no-bg
  *   node inject-skin.mjs --css ./my.css --bg ./art.webp
  *   node inject-skin.mjs --verify
  *   node inject-skin.mjs --revert
@@ -113,7 +113,21 @@ const MIME = {
 
 async function imageToDataUrl(spec) {
   if (/^https?:\/\//i.test(spec)) return spec;
-  const abs = path.isAbsolute(spec) ? spec : path.resolve(REPO, spec);
+  // Theme paths are relative to mimo/; absolute paths and repo-root paths also work.
+  const candidates = path.isAbsolute(spec)
+    ? [spec]
+    : [path.resolve(ROOT, spec), path.resolve(REPO, spec)];
+  let abs = candidates[0];
+  let found = false;
+  for (const c of candidates) {
+    try {
+      await readFile(c);
+      abs = c;
+      found = true;
+      break;
+    } catch { /* try next */ }
+  }
+  if (!found) abs = candidates[0];
   const ext = path.extname(abs).toLowerCase();
   const mime = MIME[ext];
   if (!mime) throw new Error(`Unsupported image type: ${ext || '(no ext)'} (${abs})`);

@@ -1,9 +1,9 @@
 /**
- * Tibo reset radar (MiMo port)
+ * Public X (Twitter) feed reader
  * ---------------------------------------------------------------------------
- * 从 Node 侧抓取 https://x.com/thsottiaux 公开页，解析时间线并分类额度重置信号。
- * 数据源与分类规则对齐 Codex 版的 parseTiboXPayload / classifyTiboXPost。
- * 渲染层无法直接 fetch x.com（CORS），所以必须在注入器进程完成。
+ * 仅从 Node 侧抓取 https://x.com/thsottiaux 公开时间线，解析与额度/重置相关的动态。
+ * 这不是官方通知，也不读取任何账户凭据；渲染层无法直接 fetch x.com（CORS），
+ * 所以必须在注入器进程完成。失败时降级为空信号，不阻断换肤。
  */
 
 const TIBO_X_URL = 'https://x.com/thsottiaux';

@@ -2,8 +2,7 @@
   "schema": "mimo-dream-skin-theme/1",
   "id": "sakura-coast",
   "label": "樱花海岸",
-  "source": "windows/assets/presets/preset-sakura-coast/theme.json",
-  "image": "windows/assets/presets/preset-sakura-coast/sakura-coast.webp",
+  "image": "assets/sakura-coast.webp",
   "appearance": "auto",
   "colors": {
     "background": "#F1F8FC",
